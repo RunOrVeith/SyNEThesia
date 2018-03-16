@@ -9,12 +9,13 @@ from partygan.ops import *
 
 class SynethesiaModel(object):
 
-    def __init__(self, feature_dim):
+    def __init__(self, graph, feature_dim):
         self.feature_dim = feature_dim
 
-        (self.sound_feature, self.reproduced_sound,
-         self.base_img, self.generated_img,
-         self.loss, self.merged_summary) = self._build_model()
+        with graph.as_default():
+            (self.sound_feature, self.reproduced_sound,
+             self.base_img, self.generated_img,
+             self.loss, self.merged_summary) = self._build_model()
 
     def _placeholder(self, dtype, shape=None, name=None):
         _placeholder = tf.placeholder(dtype=dtype, shape=shape, name=name)
