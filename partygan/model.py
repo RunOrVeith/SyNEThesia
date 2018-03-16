@@ -1,8 +1,4 @@
-from pathlib import Path
-from collections import defaultdict
-
 import tensorflow as tf
-import numpy as np
 
 from partygan.ops import *
 from interfaces import Model
@@ -38,7 +34,7 @@ class SynethesiaModel(Model):
         return tensorized
 
     def _load_base_image(self, size):
-        return tf.placeholder(dtype=np.float32, shape=[None, *size, 3])
+        return tf.placeholder(dtype=tf.float32, shape=[None, *size, 3])
 
     def _build_model(self):
 
