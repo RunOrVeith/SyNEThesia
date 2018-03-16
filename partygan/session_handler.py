@@ -18,20 +18,26 @@ class SessionHandler(object):
 
         self.model = model
 
+        self._graph = None
         self._session = None
         self._saver = None
         self._running_model = None
         self._summary_writer = None
 
-
     def _raise_on_uninitialized(func):
 
         def _assert_initialization(self, *args, **kwargs):
-            if self._session is None or self._saver is None or self._summary_writer is None:
+            if (self._session is None or self._saver is None
+            or self._summary_writer is None or self._graph is None):
                raise AttributeError("Can not use SessionHandler without active context manager.")
             return func(self, *args, **kwargs)
 
         return _assert_initialization
+
+    @property
+    @_raise_on_uninitialized
+    def graph(self):
+        return self._graph
 
     @property
     @_raise_on_uninitialized
@@ -54,6 +60,10 @@ class SessionHandler(object):
         return self._summary_writer
 
     @property
+    def step(self):
+        return tf.train.global_step(sess=self.session, global_step_tensor=self.model.global_step)
+
+    @property
     def checkpoint_dir(self):
         return str(Path(self._checkpoint_dir) / self.model_name)
 
@@ -62,20 +72,39 @@ class SessionHandler(object):
         return str(Path(self._logdir) / self.model_name)
 
     def __enter__(self):
-        with tf.Graph().as_default():
-            self.model.initialize()
-            session = tf.Session().__enter__()
-            summary_writer = tf.summary.FileWriter(self.log_dir)
-            saver = tf.train.Saver(max_to_keep=5)
+        self._graph = tf.Graph()
+        self._graph.as_default().__enter__()
+        self.model.initialize()
+        session = tf.Session().__enter__()
+        summary_writer = tf.summary.FileWriter(self.log_dir)
+        saver = tf.train.Saver(max_to_keep=5)
         self._session = session
         self._saver = saver
         self._summary_writer = summary_writer
         return self
 
     def __exit__(self, *args, **kwargs):
-        return self._session.__exit__(*args, **kwargs)
+        self._session.__exit__(*args, **kwargs)
+        # self._graph.as_default().__exit__(*args, **kwargs)  # TODO find why this raises a Runtime exception
 
-    @_raise_on_uninitialized
+    def run(self, **kwargs):
+        return self._session.run(**kwargs)
+
+    def training_step(self, feed_dict, additional_ops=()):
+        ops_to_run = [self.model.training_summary, self.model.optimizer, ].extend(additional_ops)
+        results = self.session.run(ops_to_run, feed_dict=feed_dict)
+        summary = results[0]
+        step = self.step
+        self.summary_writer.add_summary(summary, step)
+        if len(additional_ops) > 0:
+            return step, results[2:]
+        return step, None
+
+    def save(self, step=None):
+        step = self.step if step is None else step
+        pth = self.saver.save(self.session, self.checkpoint_file, step)
+        return pth
+
     def load_weights_or_init(self):
         ckpt = tf.train.get_checkpoint_state(self.checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
