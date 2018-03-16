@@ -7,67 +7,51 @@ import numpy as np
 from partygan.ops import *
 
 
-class TypeCollector(object):
+class SynethesiaModel(object):
 
-    @staticmethod
-    def placeholder(dtype, shape=None, name=None):
+    def __init__(self, feature_dim):
+        self.feature_dim = feature_dim
+
+        (self.sound_feature, self.reproduced_sound,
+         self.base_img, self.generated_img,
+         self.loss, self.merged_summary) = self._build_model()
+
+    def _placeholder(self, dtype, shape=None, name=None):
         _placeholder = tf.placeholder(dtype=dtype, shape=shape, name=name)
         tf.add_to_collection(name="placeholders", value=_placeholder)
         return _placeholder
 
-
-class SyNetHesia(object):
-
-    def __init__(self, feature_dim):
-        self.model_name = "synethesia"
-        self.feature_dim = feature_dim
-
-        self.build_model()
-
-    @property
-    def model_name(self):
-        return self._model_name
-
-    @model_name.setter
-    def model_name(self, model_name):
-        self._model_name = model_name
-        self.checkpoint_dir = Path("./checkpoints") / self.model_name
-        self.logdir = Path("./logs") / self.model_name
-
-    def _img_from_sound(self, sound_feature):
-        feature = self._feature_to_tensor(sound_feature)
-        base_img = self._load_base_image(feature)
+    def _img_from_sound(self, sound_feature, size=(1024, 512)):
+        feature = self._feature_to_tensor(sound_feature=sound_feature, size=size)
+        base_img = self._load_base_image(size=size)
         assert base_img.get_shape()[1:3] == feature.get_shape()[1:3], "Rows, Cols do not match"
         x = tf.concat([base_img, feature], axis=-1, name="generator_input")
-        return x
+        return x, base_img
 
-    def _feature_to_tensor(self, sound_feature, size=(1024, 512)):
+    def _feature_to_tensor(self, sound_feature, size):
         tile_size = (1, size[0] * size[1])
         tensorized = tf.tile(sound_feature, tile_size)
         tensorized = tf.reshape(tensor=tensorized, shape=(-1, *size, self.feature_dim))
         return tensorized
 
-    def _load_base_image(self, feature=None, size=(1024, 512)):
-        batch_size = tf.shape(feature)[0]
-        generation_shape = (batch_size, *size, 3)
-        img = tf.random_uniform(shape=generation_shape, minval=0., maxval=1.,
-                                dtype=tf.float32, name="random_start_img")
-        return img
+    def _load_base_image(self, size):
+        return self._placeholder(dtype=np.float32, shape=[None, *size, 3])
 
-    def build_model(self):
+    def _build_model(self):
 
         with tf.variable_scope("synethesia"):
-            sound_feature = TypeCollector.placeholder(dtype=tf.float32, shape=[None, self.feature_dim],
-                                                     name="feature_input")
-            x = self._img_from_sound(sound_feature=sound_feature)
+            sound_feature = self._placeholder(dtype=tf.float32, shape=[None, self.feature_dim],
+                                              name="feature_input")
+            x, base_img = self._img_from_sound(sound_feature=sound_feature)
             generated_img = self._build_encoder(x=x)
             reproduced_sound = self._build_decoder(from_img=generated_img)
             assert reproduced_sound.get_shape()[1:] == sound_feature.get_shape()[1:]
-            
+
             loss = self._build_loss(generated_img=generated_img,
                                     real_sound=sound_feature,
                                     generated_sound=reproduced_sound)
-            summary = self._build_summaries()
+            summary = self._build_summary()
+        return sound_feature, reproduced_sound, base_img, generated_img, loss, summary
 
     def _build_encoder(self, x):
         num_3x3 = 4
@@ -132,7 +116,7 @@ class SyNetHesia(object):
 
             return tf.identity(total_loss, name="loss")
 
-    def _build_summaries(self):
+    def _build_summary(self):
         for loss in tf.losses.get_losses():
             tf.summary.scalar(name=loss.op.name, tensor=loss)
 
@@ -141,4 +125,4 @@ class SyNetHesia(object):
 
 
 if __name__ == "__main__":
-    net = SyNetHesia(64)
+    net = SynethesiaModel(feature_dim=64)
