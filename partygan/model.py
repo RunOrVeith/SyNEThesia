@@ -17,26 +17,19 @@ class SynethesiaModel(Model):
         self.reproduced_sound = None
         self.base_img = None
         self.generated_img = None
-        self.loss = None
-        self.merged_summary = None
+        self.learning_rate = None
+        self.optimizer = None
+        self.summary_op = None
 
     def initialize(self):
-
-        (self.sound_feature, self.reproduced_sound,
-         self.base_img, self.generated_img,
-         self.loss, self.merged_summary) = self._build_model()
-
-    def _placeholder(self, dtype, shape=None, name=None):
-        _placeholder = tf.placeholder(dtype=dtype, shape=shape, name=name)
-        tf.add_to_collection(name="placeholders", value=_placeholder)
-        return _placeholder
+        self._build_model()
 
     def _img_from_sound(self, sound_feature, size=(1024, 512)):
         feature = self._feature_to_tensor(sound_feature=sound_feature, size=size)
         base_img = self._load_base_image(size=size)
         assert base_img.get_shape()[1:3] == feature.get_shape()[1:3], "Rows, Cols do not match"
-        x = tf.concat([base_img, feature], axis=-1, name="generator_input")
-        return x, base_img
+        img_and_sound = tf.concat([base_img, feature], axis=-1, name="generator_input")
+        return img_and_sound, base_img
 
     def _feature_to_tensor(self, sound_feature, size):
         tile_size = (1, size[0] * size[1])
@@ -45,23 +38,24 @@ class SynethesiaModel(Model):
         return tensorized
 
     def _load_base_image(self, size):
-        return self._placeholder(dtype=np.float32, shape=[None, *size, 3])
+        return tf.placeholder(dtype=np.float32, shape=[None, *size, 3])
 
     def _build_model(self):
 
         with tf.variable_scope("synethesia"):
-            sound_feature = self._placeholder(dtype=tf.float32, shape=[None, self.feature_dim],
-                                              name="feature_input")
-            x, base_img = self._img_from_sound(sound_feature=sound_feature)
-            generated_img = self._build_encoder(x=x)
-            reproduced_sound = self._build_decoder(from_img=generated_img)
-            assert reproduced_sound.get_shape()[1:] == sound_feature.get_shape()[1:]
+            self.sound_feature = tf.placeholder(dtype=tf.float32, shape=[None, self.feature_dim],
+                                           name="feature_input")
+            img_and_sound, self.base_img = self._img_from_sound(sound_feature=self.sound_feature)
+            self.generated_img = self._build_encoder(x=img_and_sound)
+            self.reproduced_sound = self._build_decoder(from_img=self.generated_img)
+            assert self.reproduced_sound.get_shape()[1:] == self.sound_feature.get_shape()[1:]
 
-            loss = self._build_loss(generated_img=generated_img,
-                                    real_sound=sound_feature,
-                                    generated_sound=reproduced_sound)
-            summary = self._build_summary()
-        return sound_feature, reproduced_sound, base_img, generated_img, loss, summary
+            loss = self._build_loss(generated_img=self.generated_img,
+                                    real_sound=self.sound_feature,
+                                    generated_sound=self.reproduced_sound)
+            self.learning_rate, self.optimizer = self._build_optimizer(loss=loss)
+
+            self.summary_op = self._build_summary()
 
     def _build_encoder(self, x):
         num_3x3 = 4
@@ -102,13 +96,13 @@ class SynethesiaModel(Model):
         with tf.variable_scope("decoder"):
             y = conv2d(x=from_img, output_channels=64, kernel=(7, 7), stride=1, scope="7x7_64")
 
-        y = residual_block(x=y, output_channels=64, activation=tf.nn.relu, scope="residual_0")
-        for i in range(num_residual):
-            y = residual_block(x=y, output_channels=64, scope=f"residual_{i+1}")
+            y = residual_block(x=y, output_channels=64, activation=tf.nn.relu, scope="residual_0")
+            for i in range(num_residual):
+                y = residual_block(x=y, output_channels=64, scope=f"residual_{i+1}")
 
-        y = conv2d(x=y, output_channels=self.feature_dim, kernel=(3, 3), stride=1, scope=f"3x3_{self.feature_dim}")
-        y = tf.reduce_mean(y, [1, 2], name="decoder")
-        # No activation because we don't want any value limits
+            y = conv2d(x=y, output_channels=self.feature_dim, kernel=(3, 3), stride=1, scope=f"3x3_{self.feature_dim}")
+            y = tf.reduce_mean(y, [1, 2], name="decoder")
+            # No activation because we don't want any value limits
         return y
 
     def _build_loss(self, generated_img, real_sound, generated_sound, lambda_reconstruct=0.9, lambda_color=0.1):
@@ -121,10 +115,28 @@ class SynethesiaModel(Model):
             color_loss = tf.identity(_color_loss, name="color_loss")
             tf.losses.add_loss(color_loss)
 
-            total_loss = lambda_reconstruct * reconstruction_loss + lambda_color * color_loss
+            _total_loss = lambda_reconstruct * reconstruction_loss + lambda_color * color_loss
+            total_loss = tf.identity(_total_loss, name="loss")
             tf.losses.add_loss(total_loss)
 
-            return tf.identity(total_loss, name="loss")
+        return total_loss
+
+    def _build_optimizer(self, loss, decay_rate=1., decay_steps=100000):
+        with tf.variable_scope("optimizer"):
+            global_step = tf.get_variable(name="global_step", trainable=False, shape=[],
+                                          initializer=tf.constant_initializer(0),
+                                          dtype=tf.int64)
+            learning_rate = tf.placeholder(dtype=tf.float32, shape=[],
+                                           name="learning_rate")
+            decayed_learning_rate = tf.train.exponential_decay(learning_rate=learning_rate,
+                                                               global_step=global_step,
+                                                               decay_steps=decay_steps, decay_rate=decay_rate,
+                                                               staircase=False, name="rate_decay")
+            optimizer = tf.train.AdamOptimizer(decayed_learning_rate).minimize(loss, global_step=global_step,
+                                                                               name="optimizer")
+
+        return learning_rate, optimizer
+
 
     def _build_summary(self):
         for loss in tf.losses.get_losses():
@@ -136,3 +148,4 @@ class SynethesiaModel(Model):
 
 if __name__ == "__main__":
     net = SynethesiaModel(feature_dim=64)
+    net.initialize()
