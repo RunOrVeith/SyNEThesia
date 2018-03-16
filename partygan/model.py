@@ -5,17 +5,26 @@ import tensorflow as tf
 import numpy as np
 
 from partygan.ops import *
+from interfaces import Model
 
 
-class SynethesiaModel(object):
+class SynethesiaModel(Model):
 
-    def __init__(self, graph, feature_dim):
+    def __init__(self, feature_dim):
         self.feature_dim = feature_dim
 
-        with graph.as_default():
-            (self.sound_feature, self.reproduced_sound,
-             self.base_img, self.generated_img,
-             self.loss, self.merged_summary) = self._build_model()
+        self.sound_feature = None
+        self.reproduced_sound = None
+        self.base_img = None
+        self.generated_img = None
+        self.loss = None
+        self.merged_summary = None
+
+    def initialize(self):
+
+        (self.sound_feature, self.reproduced_sound,
+         self.base_img, self.generated_img,
+         self.loss, self.merged_summary) = self._build_model()
 
     def _placeholder(self, dtype, shape=None, name=None):
         _placeholder = tf.placeholder(dtype=dtype, shape=shape, name=name)
