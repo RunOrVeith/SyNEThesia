@@ -7,18 +7,36 @@ from interfaces import Model
 class SynethesiaModel(Model):
 
     def __init__(self, feature_dim):
+        # TODO make image size a parameter
         self.feature_dim = feature_dim
 
         self.sound_feature = None
         self.reproduced_sound = None
         self.base_img = None
         self.generated_img = None
-        self.learning_rate = None
-        self.optimizer = None
-        self.summary_op = None
+
+        super(SynethesiaModel, self).__init__()
 
     def initialize(self):
         self._build_model()
+
+    def data_input(self):
+        return self.sound_feature
+
+    def data_output(self):
+        return self.generated_img
+
+    def optimizer(self):
+        return self._optimizer
+
+    def learning_rate(self):
+        return self._learning_rate
+
+    def training_summary(self):
+        return self._summary_op
+
+    def global_step(self):
+        return self._global_step
 
     def _img_from_sound(self, sound_feature, size=(1024, 512)):
         feature = self._feature_to_tensor(sound_feature=sound_feature, size=size)
@@ -49,9 +67,9 @@ class SynethesiaModel(Model):
             loss = self._build_loss(generated_img=self.generated_img,
                                     real_sound=self.sound_feature,
                                     generated_sound=self.reproduced_sound)
-            self.learning_rate, self.optimizer = self._build_optimizer(loss=loss)
+            self._global_step, self._learning_rate, self._optimizer = self._build_optimizer(loss=loss)
 
-            self.summary_op = self._build_summary()
+            self._summary_op = self._build_summary()
 
     def _build_encoder(self, x):
         num_3x3 = 4
@@ -131,7 +149,7 @@ class SynethesiaModel(Model):
             optimizer = tf.train.AdamOptimizer(decayed_learning_rate).minimize(loss, global_step=global_step,
                                                                                name="optimizer")
 
-        return learning_rate, optimizer
+        return global_step, learning_rate, optimizer
 
 
     def _build_summary(self):
