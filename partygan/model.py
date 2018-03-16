@@ -63,6 +63,11 @@ class SyNetHesia(object):
             generated_img = self._build_encoder(x=x)
             reproduced_sound = self._build_decoder(from_img=generated_img)
             assert reproduced_sound.get_shape()[1:] == sound_feature.get_shape()[1:]
+            
+            loss = self._build_loss(generated_img=generated_img,
+                                    real_sound=sound_feature,
+                                    generated_sound=reproduced_sound)
+            summary = self._build_summaries()
 
     def _build_encoder(self, x):
         num_3x3 = 4
@@ -79,8 +84,6 @@ class SyNetHesia(object):
                            activation=tf.nn.relu,
                            scope=f"3x3_{channels}")  # TODO add normalization
 
-            assert channels == 1024
-
             x = residual_block(x=x, output_channels=channels,
                                activation=tf.nn.relu, scope="residual_0")  # TODO add normalization
             for i in range(num_residual - 1):
@@ -95,8 +98,9 @@ class SyNetHesia(object):
                                       kernel=(3, 3), stride=2,
                                       activation=tf.nn.relu,
                                       scope=f"transposed_{channels}") # TODO add normalization
-            assert channels == 64
+
             x = conv2d(x=x, output_channels=3, kernel=(7, 7), stride=1, activation=tf.nn.relu, scope="7x7_3")
+            x = tf.nn.sigmoid(x, name="encoder")  # Scale pixels to [0,1]
         return x
 
     def _build_decoder(self, from_img):
@@ -109,9 +113,32 @@ class SyNetHesia(object):
             y = residual_block(x=y, output_channels=64, scope=f"residual_{i+1}")
 
         y = conv2d(x=y, output_channels=self.feature_dim, kernel=(3, 3), stride=1, scope=f"3x3_{self.feature_dim}")
-        y = tf.reduce_mean(y, [1, 2])
-        y = tf.nn.relu(y, name="extracted_features")
+        y = tf.reduce_mean(y, [1, 2], name="decoder")
+        # No activation because we don't want any value limits
         return y
+
+    def _build_loss(self, generated_img, real_sound, generated_sound, lambda_reconstruct=0.9, lambda_color=0.1):
+
+        with tf.variable_scope("loss"):
+            reconstruction_loss = tf.losses.huber_loss(labels=real_sound, predictions=generated_sound,
+                                                       delta=1.0, scope="huber_loss")
+            _, colorfulness = tf.nn.moments(generated_img, axes=[-1], name="colorfulness")
+            _color_loss = - tf.reduce_sum(colorfulness) / tf.cast(tf.size(colorfulness), tf.float32)
+            color_loss = tf.identity(_color_loss, name="color_loss")
+            tf.losses.add_loss(color_loss)
+
+            total_loss = lambda_reconstruct * reconstruction_loss + lambda_color * color_loss
+            tf.losses.add_loss(total_loss)
+
+            return tf.identity(total_loss, name="loss")
+
+    def _build_summaries(self):
+        for loss in tf.losses.get_losses():
+            tf.summary.scalar(name=loss.op.name, tensor=loss)
+
+        return tf.summary.merge_all()
+
+
 
 if __name__ == "__main__":
     net = SyNetHesia(64)
