@@ -25,6 +25,9 @@ class SessionHandler(object):
         self._running_model = None
         self._summary_writer = None
 
+        Path(self.checkpoint_dir).mkdir(parents=True, exist_ok=True)
+        Path(self.log_dir).mkdir(parents=True, exist_ok=True)
+
     def _raise_on_uninitialized(func):
 
         def _assert_initialization(self, *args, **kwargs):
@@ -67,6 +70,10 @@ class SessionHandler(object):
     @property
     def checkpoint_dir(self):
         return str(Path(self._checkpoint_dir) / self.model_name)
+
+    @property
+    def checkpoint_file(self):
+        return str((Path(self._checkpoint_dir) / self.model_name) / "checkpoint.ckpt")
 
     @property
     def log_dir(self):
