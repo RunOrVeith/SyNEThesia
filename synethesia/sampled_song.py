@@ -9,9 +9,15 @@ def next_power_of_two(number):
     return 2 ** math.ceil(math.log(number, 2))
 
 
+def fft_features(wav_chunks):
+    fft = np.fft.fft(wav_chunks)
+    sound_dB = 10 * np.log10(np.square(np.real(fft)) + np.square(np.imag(fft)))
+    return sound_dB
+
+
 class SampledSong(object):
 
-    def __init__(self, song_path, feature_extraction_method=np.fft.fft):
+    def __init__(self, song_path, feature_extraction_method=fft_features):
         song_path = Path(song_path)
 
         self.feature_extraction_method = feature_extraction_method
