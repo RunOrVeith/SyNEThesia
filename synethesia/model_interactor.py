@@ -52,7 +52,7 @@ class TrainingSession(object):
 
                 if step % save_every_n_steps == 0 and step > 0:
                     session_handler.save(step=step)
-                    print(f"Step {step}, time: {time_diff(start_time)}: Saving in {pth}")
+                    print(f"Step {step}, time: {time_diff(start_time)}: Saving in {session_handler.checkpoint_dir}")
     # TODO integrate validation
 
 
