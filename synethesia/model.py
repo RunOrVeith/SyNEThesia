@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from partygan.ops import *
+from ops import *
 from interfaces import Model
 
 
@@ -24,7 +24,7 @@ class SynethesiaModel(Model):
         return self.sound_feature
 
     def data_output(self):
-        return self.generated_img
+        return tf.tuple(tensors=[self.generated_img, self.reproduced_sound])
 
     def optimizer(self):
         return self._optimizer

@@ -87,11 +87,8 @@ class SessionHandler(object):
         self._session.__exit__(*args, **kwargs)
         # self._graph.as_default().__exit__(*args, **kwargs)  # TODO find why this raises a Runtime exception
 
-    def run(self, **kwargs):
-        return self._session.run(**kwargs)
-
     def training_step(self, feed_dict, additional_ops=()):
-        ops_to_run = [self.model.training_summary, self.model.optimizer, ].extend(additional_ops)
+        ops_to_run = [self.model.training_summary, self.model.optimizer].extend(additional_ops)
         results = self.session.run(ops_to_run, feed_dict=feed_dict)
         summary = results[0]
         step = self.step
@@ -99,6 +96,11 @@ class SessionHandler(object):
         if len(additional_ops) > 0:
             return step, results[2:]
         return step, None
+
+    def inference_step(self, feed_dict, additional_ops=()):
+        ops_to_run = [self.model.data_output].extend(additional_ops)
+        results = self.session.run(ops_to_run, feed_dict=feed_dict)
+        return results
 
     def save(self, step=None):
         step = self.step if step is None else step
