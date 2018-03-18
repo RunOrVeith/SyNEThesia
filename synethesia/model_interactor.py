@@ -65,7 +65,7 @@ class InferenceSession(object):
     def infer(self, model_name, data_provider):
         start_time = time.time()
 
-        with SessionHandler(model=self.model, model_name=self.model_name) as session_handler:
+        with SessionHandler(model=self.model, model_name=model_name) as session_handler:
             session_handler.load_weights_or_init()
 
             for input_feature in data_provider:
