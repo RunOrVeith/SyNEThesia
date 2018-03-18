@@ -11,7 +11,7 @@ def next_power_of_two(number):
 
 def fft_features(wav_chunks):
     fft = np.fft.fft(wav_chunks)
-    sound_dB = 10 * np.log10(np.square(np.real(fft)) + np.square(np.imag(fft)))
+    sound_dB = 10 * np.log10(np.maximum(1., np.square(np.real(fft)) + np.square(np.imag(fft))))
     return sound_dB
 
 
