@@ -20,21 +20,27 @@ class SynethesiaModel(Model):
     def initialize(self):
         self._build_model()
 
+    @property
     def data_input(self):
         return self.sound_feature
 
+    @property
     def data_output(self):
         return tf.tuple(tensors=[self.generated_img, self.reproduced_sound])
 
+    @property
     def optimizer(self):
         return self._optimizer
 
+    @property
     def learning_rate(self):
         return self._learning_rate
 
+    @property
     def training_summary(self):
         return self._summary_op
 
+    @property
     def global_step(self):
         return self._global_step
 
