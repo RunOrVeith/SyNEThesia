@@ -7,7 +7,7 @@ from interfaces import Model
 
 class SessionHandler(object):
 
-    def __init__(self, model, model_name, checkpoint_dir="./checkpoints", logdir="./logs"):
+    def __init__(self, model, model_name, checkpoint_dir="./checkpoints", logdir="./logs", max_saves_to_keep=5):
 
         if not isinstance(model, Model):
             raise ValueError(f"Model must be of type 'Model', not {type(model)}")
@@ -15,6 +15,7 @@ class SessionHandler(object):
         self.model_name = model_name
         self._checkpoint_dir = checkpoint_dir
         self._logdir = logdir
+        self.max_saves_to_keep = max_saves_to_keep
 
         self.model = model
 
@@ -77,7 +78,7 @@ class SessionHandler(object):
         self.model.initialize()
         session = tf.Session().__enter__()
         summary_writer = tf.summary.FileWriter(self.log_dir)
-        saver = tf.train.Saver(max_to_keep=5)
+        saver = tf.train.Saver(max_to_keep=self.max_saves_to_keep)
         self._session = session
         self._saver = saver
         self._summary_writer = summary_writer
@@ -85,10 +86,13 @@ class SessionHandler(object):
 
     def __exit__(self, *args, **kwargs):
         self._session.__exit__(*args, **kwargs)
-        # self._graph.as_default().__exit__(*args, **kwargs)  # TODO find why this raises a Runtime exception
+        # self._graph.as_default().__exit__(*args, **kwargs)
+        # TODO find why this raises a Runtime exception, maybe need to get context manager of graph from
+        # session before closing it?
 
     def training_step(self, feed_dict, additional_ops=()):
-        ops_to_run = [self.model.training_summary, self.model.optimizer].extend(additional_ops)
+        ops_to_run = [self.model.training_summary, self.model.optimizer]
+        ops_to_run.extend(additional_ops)
         results = self.session.run(ops_to_run, feed_dict=feed_dict)
         summary = results[0]
         step = self.step
@@ -98,7 +102,8 @@ class SessionHandler(object):
         return step, None
 
     def inference_step(self, feed_dict, additional_ops=()):
-        ops_to_run = [self.model.data_output].extend(additional_ops)
+        ops_to_run = [self.model.data_output]
+        ops_to_run.extend(additional_ops)
         results = self.session.run(ops_to_run, feed_dict=feed_dict)
         return results
 
