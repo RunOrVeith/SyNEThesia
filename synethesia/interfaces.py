@@ -40,3 +40,7 @@ class Model(object, metaclass=abc.ABCMeta):
     @property
     def global_step(self):
         pass
+
+    @property
+    def is_training(self):
+        return tf.placeholder(dtype=tf.bool, shape=[], name="is_training")
