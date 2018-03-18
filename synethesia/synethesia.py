@@ -6,9 +6,9 @@ from model_interactor import Trainable, Inferable
 
 class Synethesia(Trainable, Inferable):
 
-    def __init__(self, feature_dim, img_size=(1024, 512)):
+    def __init__(self, feature_dim, img_size=(256, 128)):
         self.img_size = img_size
-        self.model = SynethesiaModel(feature_dim=feature_dim)
+        self.model = SynethesiaModel(feature_dim=feature_dim, img_size=img_size)
         Trainable.__init__(self, model=self.model)
         Inferable.__init__(self, model=self.model)
 
