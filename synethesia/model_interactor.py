@@ -11,6 +11,26 @@ def time_diff(start_time):
     return "%d:%02d:%02d:%02d" % (d, h, m, s)
 
 
+class Trainable(object, metaclass=abc.ABCMeta):
+
+    def __init__(self, model):
+        self.training_session = TrainingSession(model=model, generate_train_dict=self.generate_train_dict)
+
+    @abc.abstractmethod
+    def generate_train_dict(self, learning_rate, input_features, batch_size):
+        pass
+
+
+class Inferable(object, metaclass=abc.ABCMeta):
+
+    def __init__(self, model):
+        self.inferece_session = InferenceSession(model=model, generate_inference_dict=self.generate_inference_dict)
+
+    @abc.abstractmethod
+    def generate_inference_dict(self, input_features, batch_size):
+        pass
+
+
 class TrainingSession(object):
 
     def __init__(self, model, generate_train_dict):

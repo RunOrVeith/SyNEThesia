@@ -2,11 +2,10 @@ from pathlib import Path
 import numpy as np
 import pydub
 import scipy.io.wavfile
-import math
 
 
 def next_power_of_two(number):
-    return 2 ** math.ceil(math.log(number, 2))
+    return int(2 ** np.ceil(np.log2(np.maximum(1., number))))
 
 
 def fft_features(wav_chunks):

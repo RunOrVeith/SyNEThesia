@@ -1,29 +1,7 @@
-import abc
-
 import numpy as np
 
 from model import SynethesiaModel
-from model_interactor import TrainingSession, InferenceSession
-
-
-class Trainable(object, metaclass=abc.ABCMeta):
-
-    def __init__(self, model):
-        self.training_session = TrainingSession(model=model, generate_train_dict=self.generate_train_dict)
-
-    @abc.abstractmethod
-    def generate_train_dict(self, learning_rate, input_features, batch_size):
-        pass
-
-
-class Inferable(object, metaclass=abc.ABCMeta):
-
-    def __init__(self, model):
-        self.inferece_session = InferenceSession(model=model, generate_inference_dict=self.generate_inference_dict)
-
-    @abc.abstractmethod
-    def generate_inference_dict(self, input_features, batch_size):
-        pass
+from model_interactor import Trainable, Inferable
 
 
 class Synethesia(Trainable, Inferable):

@@ -2,7 +2,6 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import random
 
-import tensorflow as tf
 import numpy as np
 
 from sampled_song import SampledSong
@@ -45,6 +44,8 @@ class BatchCreator(object):
 
 
 class StaticSongLoader(object):
+
+    # TODO abstract into reusable class
 
     def __init__(self, song_files, batch_size, to_infinity=False, load_n_songs_at_once=5):
         # Assume all song files exist for now
