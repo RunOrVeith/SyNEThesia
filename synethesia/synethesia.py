@@ -31,7 +31,20 @@ class Synethesia(Trainable, Inferable):
 
 if __name__ == "__main__":
     from audio_chunk_loader import StaticSongLoader
+    from PIL import Image
     synethesia = Synethesia(feature_dim=64)
     train_loader = StaticSongLoader(song_files=["/home/veith/Projects/PartyGAN/data/Bearded Skull - 420 [Hip Hop Instrumental]/audio/soundtrack.mp3"],
                                     batch_size=1, load_n_songs_at_once=1)
-    synethesia.training_session.train(model_name="overfit_bearded_skull", data_provider=train_loader)
+    train = False
+    if train:
+        synethesia.training_session.train(model_name="overfit_bearded_skull", data_provider=train_loader)
+    else:
+        for i, (imgs, sounds) in enumerate(synethesia.inferece_session.infer(model_name="overfit_bearded_skull",
+                                                                             data_provider=train_loader)):
+            for img in imgs:
+                print(np.var(img), np.max(img), np.mean(img))
+                print(img * 255)
+                input()
+            print(sounds)
+            input()
+                #Image.fromarray((img * 255).astype(np.uint8)).save(f"/tmp/test_bearded_skull/{i}.png")
