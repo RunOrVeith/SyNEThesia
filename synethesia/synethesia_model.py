@@ -6,14 +6,14 @@ from interfaces import Model
 
 class SynethesiaModel(Model):
 
-    def __init__(self, feature_dim, img_size=(256, 128)):
+    def __init__(self, feature_dim, img_size=(256, 128), num_residual=9):
 
         self.feature_dim = feature_dim
         self.img_size = img_size
 
         self._num_3x3 = int(np.floor(np.log2(self.img_size[0])) - 4)
         self._channels = 2 ** self._num_3x3
-        self._num_residual = 9
+        self._num_residual = num_residual
         self._num_transpose = self._num_3x3
 
         self.sound_feature = None
@@ -130,7 +130,7 @@ class SynethesiaModel(Model):
             # No activation because we don't want any value limits
         return y
 
-    def _build_loss(self, generated_img, real_sound, generated_sound, lambda_reconstruct=0.9, lambda_color=0.1):
+    def _build_loss(self, generated_img, real_sound, generated_sound, lambda_reconstruct=1., lambda_color=0.):
 
         with tf.variable_scope("loss"):
             reconstruction_loss = tf.losses.huber_loss(labels=real_sound, predictions=generated_sound,
