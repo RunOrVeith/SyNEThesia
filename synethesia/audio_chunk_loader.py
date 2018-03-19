@@ -1,46 +1,10 @@
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import random
 
 import numpy as np
 
 from sampled_song import SampledSong
-
-
-class BatchCreator(object):
-
-    def __init__(self, iterable, batch_size):
-        self._iterator_source = iterable
-        self.iterator = None
-        self.batch_size = batch_size
-
-        self.reset()
-
-    def __iter__(self):
-        return self
-
-    def reset_and_shuffle(self):
-        random.shuffle(self._iterator_source)
-        self.reset()
-
-    def reset(self):
-        self.iterator = iter(self._iterator_source)
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        instances = []
-        try:
-            for _ in range(self.batch_size):
-                instances.append(next(self.iterator))
-        except StopIteration:
-            # Number of elements in iterator is not a multuple of batch_size,
-            # just batch the remaining instances
-            if len(instances) == 0:
-                raise StopIteration()
-
-        return np.stack(instances, axis=0)
+from data_loaders import BatchCreator
 
 
 class StaticSongLoader(object):
@@ -82,6 +46,7 @@ class StaticSongLoader(object):
             try:
                 self._maybe_load_songs(refill_level=1000)
             except StopIteration:
+                print("Epoch done.")
                 if self.to_infinity:
                     self.song_batcher.reset_and_shuffle()
                     continue
