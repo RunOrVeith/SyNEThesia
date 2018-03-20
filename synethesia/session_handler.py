@@ -83,6 +83,7 @@ class SessionHandler(object):
         self._graph = tf.Graph()
         self._graph.as_default().__enter__()
         self.model.initialize()
+        # TODO allow a debug session instead
         session = tf.Session().__enter__()
         summary_writer = tf.summary.FileWriter(self.log_dir)
         saver = tf.train.Saver(max_to_keep=self.max_saves_to_keep)

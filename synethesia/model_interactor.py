@@ -69,7 +69,6 @@ class InferenceSession(object):
             session_handler.load_weights_or_init()
 
             for input_feature in data_provider:
-                print(input_feature)
 
                 feed_dict = self.generate_inference_dict(input_features=input_feature)
                 results = session_handler.inference_step(feed_dict=feed_dict)
