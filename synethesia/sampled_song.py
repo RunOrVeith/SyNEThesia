@@ -27,6 +27,10 @@ class SampledSong(object):
 
         return self._features
 
+    @property
+    def feature_dim(self):
+        return self.features[0].shape[-1]
+
     @staticmethod
     def _validate_input(song_path):
         if not song_path.exists():
