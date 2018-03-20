@@ -2,16 +2,43 @@ import tensorflow as tf
 from tensorflow.python.ops.random_ops import truncated_normal
 import numpy as np
 
+def batch_renorm(x, is_train_tensor=None):
 
-def conv2d(x, output_channels, scope=None, kernel=(5, 5), activation=None, stride=1):
+    if is_train_tensor is None:
+        is_training_tensor = tf.get_default_graph().get_tensor_by_name('is_training:0')
+
+    batch_renorm = batch_renorm_layer.fused_batch_norm(inputs=x,
+                                                       rmax=3,
+                                                       dmax=5,
+                                                       renorm=True,
+                                                       decay=0.9,
+                                                       center=True,
+                                                       scale=True,
+                                                       epsilon=1e-4,
+                                                       activation_fn=None,
+                                                       param_initializers=None,
+                                                       is_training=is_training_tensor,
+                                                       reuse=None,
+                                                       variables_collections=None,
+                                                       outputs_collections=None,
+                                                       trainable=True,
+                                                       zero_debias_moving_mean=True,
+                                                       scope=None)
+
+    return batch_renorm
+
+
+def conv2d(x, output_channels, scope=None, kernel=(5, 5), stride=1, use_batchnorm=False, activation=None,):
 
     strides = [1, stride, stride, 1]
     in_dim = x.get_shape().as_list()[-1]
 
-    if activation is not None:
-        x = activation(x)
-
     with tf.variable_scope(scope or "conv2"):
+
+        if use_batchnorm:
+            x = batch_renorm(x)
+        if activation is not None:
+            x = activation(x)
         initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtype=tf.float32)
         W = tf.get_variable(name="weight", shape=[*kernel, in_dim, output_channels],
                             dtype=tf.float32, initializer=initializer,
@@ -29,7 +56,7 @@ def conv2d(x, output_channels, scope=None, kernel=(5, 5), activation=None, strid
     return x
 
 
-def conv2d_transposed(x, output_channels, scope=None, kernel=(4, 4), stride=2, activation=None):
+def conv2d_transposed(x, output_channels, scope=None, kernel=(4, 4), stride=2, use_batchnorm=False, activation=None):
     assert isinstance(output_channels, int)
     assert isinstance(stride, int)
 
@@ -39,6 +66,8 @@ def conv2d_transposed(x, output_channels, scope=None, kernel=(4, 4), stride=2, a
 
     with tf.variable_scope(scope or "conv2d_transposed"):
 
+        if use_batchnorm:
+            x = batch_renorm(x)
         if activation is not None:
             x = activation(x)
 
@@ -118,7 +147,7 @@ def bilinear_filt(filter_size=(4, 4)):
 
     return kernel
 
-def residual_block(x, output_channels, scope=None, activation=None):
+def residual_block(x, output_channels, scope=None, use_batchnorm=False, activation=None):
     with tf.variable_scope(scope or "residual_block"):
         shortcut = x
         input_channels = x.get_shape()[-1]
@@ -128,6 +157,7 @@ def residual_block(x, output_channels, scope=None, activation=None):
                    scope='conv_1',
                    kernel=(3, 3),
                    stride=1,
+                   use_batchnorm=use_batchnorm,
                    activation=activation)
 
         x = conv2d(x=x,
@@ -135,12 +165,14 @@ def residual_block(x, output_channels, scope=None, activation=None):
                    scope='conv_2',
                    kernel=(3, 3),
                    stride=1,
+                   use_batchnorm=use_batchnorm,
                    activation=activation)
 
         if input_channels != output_channels:
             shortcut = conv2d(x=shortcut,
                               output_channel=output_channels,
                               scope='conv_1x1',
+                              use_batchnorm=False,
                               kernel=(1, 1),
                               stride=1,
                               activation=None)
