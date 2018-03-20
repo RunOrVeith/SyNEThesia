@@ -11,19 +11,30 @@ class StaticSongLoader(object):
 
     # TODO abstract into reusable class
 
-    def __init__(self, song_files, batch_size, to_infinity=False, load_n_songs_at_once=5):
+    def __init__(self, song_files, batch_size, feature_extractor,
+                 to_infinity=False, load_n_songs_at_once=5, allow_shuffle=True):
         # Assume all song files exist for now
-        self.songs = [SampledSong(song_file) for song_file in song_files]
+        self.songs = [SampledSong(song_file, feature_extraction_method=feature_extractor) for song_file in song_files]
+        assert len({song.feature_dim for song in self.songs}) == 1, "Features must have the same size"
         load_n_songs_at_once = min(len(song_files), load_n_songs_at_once)
-        self.song_batcher = BatchCreator(iterable=self.songs, batch_size=load_n_songs_at_once)
+        self.song_batcher = BatchCreator(iterable=self.songs, batch_size=load_n_songs_at_once,
+                                         allow_shuffle=allow_shuffle)
         self.loaded_snippets = []
         self.batch_size = batch_size
         self.to_infinity = to_infinity
 
+    def __len__(self):
+        return len(self.songs)
+
+    @property
+    def feature_dim(self):
+        return self.songs[0].feature_dim
+
     def _load_songs_async(self, songs_to_load):
 
         def _load_song(song):
-            return [snippet for snippet in song]
+            features = [feat for feat in song]
+            return features
 
         with ThreadPoolExecutor() as executor:
 
@@ -46,21 +57,23 @@ class StaticSongLoader(object):
             try:
                 self._maybe_load_songs(refill_level=1000)
             except StopIteration:
-                print("Epoch done.")
+                #print("Epoch done.")
                 if self.to_infinity:
-                    self.song_batcher.reset_and_shuffle()
+                    self.song_batcher.reset()
                     continue
                 else:
                     raise StopIteration()
             else:
-                feature_batcher = BatchCreator(iterable=self.loaded_snippets, batch_size=self.batch_size)
+                feature_batcher = BatchCreator(iterable=self.loaded_snippets, batch_size=self.batch_size,
+                                               allow_shuffle=True)
                 yield from feature_batcher
 
 
 
-
 if __name__ == "__main__":
+    from feature_creators import logfbank_features
     song_loader = StaticSongLoader(song_files=["/home/veith/Projects/PartyGAN/data/Bearded Skull - 420 [Hip Hop Instrumental]/audio/soundtrack.mp3"],
+                                   feature_extractor=logfbank_features,
                                    batch_size=1, load_n_songs_at_once=1)
     for audio_chunk in song_loader:
         print(audio_chunk)
