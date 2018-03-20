@@ -6,7 +6,7 @@ from interfaces import Model
 
 class SynethesiaModel(Model):
 
-    def __init__(self, feature_dim, img_size=(256, 128), num_residual=9):
+    def __init__(self, feature_dim, img_size=(256, 128), num_residual=2):
 
         self.feature_dim = feature_dim
         self.img_size = img_size
@@ -93,11 +93,12 @@ class SynethesiaModel(Model):
                 channels *= 2
                 x = conv2d(x=x, output_channels=channels,
                            kernel=(3, 3), stride=2,
+                           use_batchnorm=True,
                            activation=tf.nn.relu,
-                           scope=f"3x3_{channels}")  # TODO add normalization
+                           scope=f"3x3_{channels}")
 
-            x = residual_block(x=x, output_channels=channels,
-                               activation=tf.nn.relu, scope="residual_0")  # TODO add normalization
+            x = residual_block(x=x, output_channels=channels, use_batchnorm=True,
+                               activation=tf.nn.relu, scope="residual_0")
             for i in range(self._num_residual - 1):
                 x = residual_block(x=x, output_channels=channels, scope=f"residual_{i+1}")
 
@@ -108,8 +109,9 @@ class SynethesiaModel(Model):
                 channels //= 2
                 x = conv2d_transposed(x=x, output_channels=channels,
                                       kernel=(3, 3), stride=2,
+                                      use_batchnorm=True,
                                       activation=tf.nn.relu,
-                                      scope=f"transposed_{channels}") # TODO add normalization
+                                      scope=f"transposed_{channels}")
 
             x = conv2d(x=x, output_channels=3, kernel=(7, 7), stride=1, activation=tf.nn.relu, scope="7x7_3")
             x = tf.nn.sigmoid(x, name="encoder")  # Scale pixels to [0,1]
@@ -130,14 +132,19 @@ class SynethesiaModel(Model):
             # No activation because we don't want any value limits
         return y
 
-    def _build_loss(self, generated_img, real_sound, generated_sound, lambda_reconstruct=1., lambda_color=0.):
+    def _build_loss(self, generated_img, real_sound, generated_sound, lambda_reconstruct=.9, lambda_color=0.1):
 
         with tf.variable_scope("loss"):
-            reconstruction_loss = tf.losses.huber_loss(labels=real_sound, predictions=generated_sound,
-                                                       delta=1.0, scope="huber_loss")
-            _, colorfulness = tf.nn.moments(generated_img, axes=[-1], name="colorfulness")
+
+            reconstruction_loss = tf.losses.mean_squared_error(labels=real_sound, predictions=generated_sound,
+                                                               scope="mean_squared_error")
+
+            mean_global_color, var_global_color = tf.nn.moments(generated_img, axes=[1, 2], name="global_color", keep_dims=True)
+            _, colorfulness = tf.nn.moments(tf.abs(generated_img - mean_global_color), axes=[-1], name="colorfulness",
+                                            )
             _color_loss = - tf.reduce_sum(colorfulness)
             color_loss = tf.identity(_color_loss, name="color_loss")
+            #color_loss = - tf.reduce_sum(tf.image.total_variation(images=generated_img), name="color_loss")
             tf.losses.add_loss(color_loss)
 
             _total_loss = lambda_reconstruct * reconstruction_loss + lambda_color * color_loss
