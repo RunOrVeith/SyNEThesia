@@ -1,29 +1,31 @@
 from pathlib import Path
+
 import numpy as np
 import pydub
 import scipy.io.wavfile
 
 
-def next_power_of_two(number):
-    return int(2 ** np.ceil(np.log2(np.maximum(1., number))))
-
-
-def fft_features(wav_chunks):
-    fft = np.fft.fft(wav_chunks)
-    sound_dB = 10 * np.log10(np.maximum(1., np.square(np.real(fft)) + np.square(np.imag(fft))))
-    return sound_dB
-
-
 class SampledSong(object):
 
-    def __init__(self, song_path, feature_extraction_method=fft_features):
+    def __init__(self, song_path, feature_extraction_method, fps=24):
         song_path = Path(song_path)
 
         self.feature_extraction_method = feature_extraction_method
         self.name = song_path.stem
+
+        self.fps = fps
+
         with SampledSong._convert_to_wav(song_path) as wavfile_name:
-            self.rate, multi_channel_audio = scipy.io.wavfile.read(wavfile_name)
-            self.audio = np.mean(multi_channel_audio, axis=-1)
+            self.samplerate, self.signal = scipy.io.wavfile.read(wavfile_name)
+
+        self._features = None
+
+    @property
+    def features(self):
+        if self._features is None:
+            self._features = self.extract_features()
+
+        return self._features
 
     @staticmethod
     def _validate_input(song_path):
@@ -59,25 +61,19 @@ class SampledSong(object):
 
     @property
     def duration(self):
-        return self.audio.shape[0] / self.rate
+        return self.signal.shape[0] / self.samplerate
 
     def __iter__(self):
-        yield from self.extract_features()
-
-    def split_into_chunks(self, chunks_per_second=24):
-        window_length_ms = 1/chunks_per_second * 1000
-        intervals = np.arange(window_length_ms, self.audio.shape[0], window_length_ms, dtype=np.int32)
-        chunks = np.array_split(self.audio, intervals, axis=0)
-        pad_to = next_power_of_two(np.max([chunk.shape[0] for chunk in chunks]))
-        padded_chunks = np.stack(np.concatenate([chunk, np.zeros((pad_to - chunk.shape[0],))]) for chunk in chunks)
-        return padded_chunks
+        yield from self.features
 
     def extract_features(self):
-        chunks = self.split_into_chunks()
-        features = self.feature_extraction_method(chunks)
+        features = self.feature_extraction_method(signal=self.signal, samplerate=self.samplerate, fps=self.fps)
         return features
 
 
 if __name__ == "__main__":
-    song = SampledSong("/home/veith/Projects/PartyGAN/data/Bearded Skull - 420 [Hip Hop Instrumental]/audio/soundtrack.mp3")
-    song.extract_features()
+    from feature_creators import logfbank_features
+    song = SampledSong("/home/veith/Projects/PartyGAN/data/Bearded Skull - 420 [Hip Hop Instrumental]/audio/soundtrack.mp3",
+                       feature_extraction_method=logfbank_features)
+    for feature in song:
+        print(feature)
