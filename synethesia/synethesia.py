@@ -1,6 +1,6 @@
 import numpy as np
 
-from model import SynethesiaModel
+from synethesia_model import SynethesiaModel
 from model_interactor import Trainable, Inferable
 
 
@@ -12,13 +12,15 @@ class Synethesia(Trainable, Inferable):
         Trainable.__init__(self, model=self.model)
         Inferable.__init__(self, model=self.model)
 
-    def generate_train_dict(self, learning_rate, input_features, batch_size):
+    def generate_train_dict(self, learning_rate, input_features):
+        batch_size = input_features.shape[0]
         feed_dict = {self.model.learning_rate: learning_rate,
                      self.model.data_input: input_features,
                      self.model.base_img: self.random_start_img(batch_size=batch_size)}
         return feed_dict
 
-    def generate_inference_dict(self, input_features, batch_size):
+    def generate_inference_dict(self, input_features):
+        batch_size = input_features.shape[0]
         feed_dict = {self.model.data_input: input_features,
                      self.model.base_img: self.random_start_img(batch_size=batch_size)}
         return feed_dict
@@ -29,22 +31,27 @@ class Synethesia(Trainable, Inferable):
         return img
 
 
+
 if __name__ == "__main__":
     from audio_chunk_loader import StaticSongLoader
     from PIL import Image
-    synethesia = Synethesia(feature_dim=64)
-    train_loader = StaticSongLoader(song_files=["/home/veith/Projects/PartyGAN/data/Bearded Skull - 420 [Hip Hop Instrumental]/audio/soundtrack.mp3"],
-                                    batch_size=1, load_n_songs_at_once=1)
+    from feature_creators import logfbank_features
+
     train = False
+    train_loader = StaticSongLoader(song_files=["/home/veith/Projects/PartyGAN/data/Bearded Skull - 420 [Hip Hop Instrumental]/audio/soundtrack.mp3"],
+                                    batch_size=8, load_n_songs_at_once=1,
+                                    to_infinity=train, feature_extractor=logfbank_features)
+
+    synethesia = Synethesia(feature_dim=train_loader.feature_dim)
+
     if train:
-        synethesia.training_session.train(model_name="overfit_bearded_skull", data_provider=train_loader)
+        synethesia.training_session.train(model_name="overfit_bearded_skull", data_provider=train_loader, learning_rate=0.0001)
     else:
         for i, (imgs, sounds) in enumerate(synethesia.inferece_session.infer(model_name="overfit_bearded_skull",
                                                                              data_provider=train_loader)):
             for img in imgs:
-                print(np.var(img), np.max(img), np.mean(img))
+                """print(np.var(img), np.max(img), np.mean(img))
                 print(img * 255)
-                input()
-            print(sounds)
-            input()
-                #Image.fromarray((img * 255).astype(np.uint8)).save(f"/tmp/test_bearded_skull/{i}.png")
+                input()"""
+            #input()
+                Image.fromarray((img * 255).astype(np.uint8)).save(f"/tmp/test_bearded_skull/{i}.png")
