@@ -1,27 +1,25 @@
-import numpy as np
 import random
+from pathlib import Path
+
+import numpy as np
+
 
 class BatchCreator(object):
 
-    def __init__(self, iterable, batch_size):
+    def __init__(self, iterable, batch_size, allow_shuffle=False):
         self._iterator_source = iterable
         self.iterator = None
         self.batch_size = batch_size
-
+        self.allow_shuffle = allow_shuffle
         self.reset()
 
     def __iter__(self):
         return self
-
-    def reset_and_shuffle(self):
-        random.shuffle(self._iterator_source)
-        self.reset()
 
     def reset(self):
+        if self.allow_shuffle:
+                    random.shuffle(self._iterator_source)
         self.iterator = iter(self._iterator_source)
-
-    def __iter__(self):
-        return self
 
     def __next__(self):
         instances = []
