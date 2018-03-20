@@ -10,6 +10,8 @@ class Model(object, metaclass=abc.ABCMeta):
         self._optimizer = None
         self._summary_op = None
 
+        self.is_training = tf.placeholder(dtype=tf.bool, shape=[], name="is_training")
+
     @abc.abstractmethod
     def initialize(self, graph):
         pass
@@ -40,7 +42,3 @@ class Model(object, metaclass=abc.ABCMeta):
     @property
     def global_step(self):
         pass
-
-    @property
-    def is_training(self):
-        return tf.placeholder(dtype=tf.bool, shape=[], name="is_training")
