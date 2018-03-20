@@ -2,30 +2,15 @@ import tensorflow as tf
 from tensorflow.python.ops.random_ops import truncated_normal
 import numpy as np
 
-def batch_renorm(x, is_train_tensor=None):
+def batch_norm(x, is_train_tensor=None):
 
     if is_train_tensor is None:
         is_training_tensor = tf.get_default_graph().get_tensor_by_name('is_training:0')
 
-    batch_renorm = batch_renorm_layer.fused_batch_norm(inputs=x,
-                                                       rmax=3,
-                                                       dmax=5,
-                                                       renorm=True,
-                                                       decay=0.9,
-                                                       center=True,
-                                                       scale=True,
-                                                       epsilon=1e-4,
-                                                       activation_fn=None,
-                                                       param_initializers=None,
-                                                       is_training=is_training_tensor,
-                                                       reuse=None,
-                                                       variables_collections=None,
-                                                       outputs_collections=None,
-                                                       trainable=True,
-                                                       zero_debias_moving_mean=True,
-                                                       scope=None)
-
-    return batch_renorm
+    normed, _, _ = tf.nn.fused_batch_norm(x, scale=tf.ones(shape=(x.get_shape()[-1],)),
+                                          offset=tf.zeros(shape=(x.get_shape()[-1],)),
+                                          is_training=is_train_tensor, name=None)
+    return normed
 
 
 def conv2d(x, output_channels, scope=None, kernel=(5, 5), stride=1, use_batchnorm=False, activation=None,):
@@ -36,7 +21,7 @@ def conv2d(x, output_channels, scope=None, kernel=(5, 5), stride=1, use_batchnor
     with tf.variable_scope(scope or "conv2"):
 
         if use_batchnorm:
-            x = batch_renorm(x)
+            x = batch_norm(x)
         if activation is not None:
             x = activation(x)
         initializer = tf.contrib.layers.xavier_initializer(uniform=True, seed=None, dtype=tf.float32)
@@ -67,7 +52,7 @@ def conv2d_transposed(x, output_channels, scope=None, kernel=(4, 4), stride=2, u
     with tf.variable_scope(scope or "conv2d_transposed"):
 
         if use_batchnorm:
-            x = batch_renorm(x)
+            x = batch_norm(x)
         if activation is not None:
             x = activation(x)
 
