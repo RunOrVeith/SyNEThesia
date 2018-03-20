@@ -33,6 +33,8 @@ class Inferable(object, metaclass=abc.ABCMeta):
 
 class TrainingSession(object):
 
+    # TODO implement training validation and inference as same loop with customizable hooks
+
     def __init__(self, model, generate_train_dict):
         self.model = model
         self.generate_train_dict = generate_train_dict
@@ -46,14 +48,12 @@ class TrainingSession(object):
 
             for input_feature in data_provider:
                 feed_dict = self.generate_train_dict(input_features=input_feature,
-                                                     learning_rate=learning_rate,
-                                                     batch_size=data_provider.batch_size)
+                                                     learning_rate=learning_rate)
                 step, _ = session_handler.training_step(feed_dict=feed_dict)
 
                 if step % save_every_n_steps == 0 and step > 0:
                     session_handler.save(step=step)
                     print(f"Step {step}, time: {time_diff(start_time)}: Saving in {session_handler.checkpoint_dir}")
-    # TODO integrate validation
 
 
 class InferenceSession(object):
@@ -69,8 +69,9 @@ class InferenceSession(object):
             session_handler.load_weights_or_init()
 
             for input_feature in data_provider:
-                feed_dict = self.generate_inference_dict(input_features=input_feature,
-                                                         batch_size=data_provider.batch_size)
+                print(input_feature)
+
+                feed_dict = self.generate_inference_dict(input_features=input_feature)
                 results = session_handler.inference_step(feed_dict=feed_dict)
 
                 yield results
