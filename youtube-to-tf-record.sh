@@ -1,5 +1,5 @@
 #! /usr/bin/zsh
-
+# TODO do in python
 VIDEO_URL=$1
 FPS=$2
 
