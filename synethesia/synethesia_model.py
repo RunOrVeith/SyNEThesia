@@ -132,23 +132,22 @@ class SynethesiaModel(Model):
             # No activation because we don't want any value limits
         return y
 
-    def _build_loss(self, generated_img, real_sound, generated_sound, lambda_reconstruct=.9, lambda_color=0.1):
+    def _build_loss(self, generated_img, real_sound, generated_sound, lambda_reconstruct=1., lambda_color=0.00005):
 
         with tf.variable_scope("loss"):
 
             reconstruction_loss = tf.losses.mean_squared_error(labels=real_sound, predictions=generated_sound,
                                                                scope="mean_squared_error")
 
-            mean_global_color, var_global_color = tf.nn.moments(generated_img, axes=[1, 2], name="global_color", keep_dims=True)
-            _, colorfulness = tf.nn.moments(tf.abs(generated_img - mean_global_color), axes=[-1], name="colorfulness",
-                                            )
+            mean_global_color, _ = tf.nn.moments(generated_img, axes=[1, 2], name="global_color", keep_dims=True)
+            _, colorfulness = tf.nn.moments(tf.abs(generated_img - mean_global_color), axes=[-1], name="colorfulness")
             _color_loss = - tf.reduce_sum(colorfulness)
             color_loss = tf.identity(_color_loss, name="color_loss")
             #color_loss = - tf.reduce_sum(tf.image.total_variation(images=generated_img), name="color_loss")
             tf.losses.add_loss(color_loss)
 
             _total_loss = lambda_reconstruct * reconstruction_loss + lambda_color * color_loss
-            total_loss = tf.identity(_total_loss, name="loss")
+            total_loss = tf.identity(_total_loss, name="total_loss")
             tf.losses.add_loss(total_loss)
 
         return total_loss
