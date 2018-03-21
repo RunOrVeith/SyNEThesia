@@ -6,7 +6,7 @@ from interfaces import Model
 
 class SynethesiaModel(Model):
 
-    def __init__(self, feature_dim, img_size=(256, 128), num_residual=2):
+    def __init__(self, feature_dim, img_size=(256, 128), num_residual=3):
 
         self.feature_dim = feature_dim
         self.img_size = img_size
@@ -67,7 +67,8 @@ class SynethesiaModel(Model):
         return tf.placeholder(dtype=tf.float32, shape=[None, *self.img_size, 3])
 
     def _build_model(self):
-
+        # TODO dont ignore base image
+        # TODO compare difference to previous slice
         with tf.variable_scope("synethesia"):
             self.sound_feature = tf.placeholder(dtype=tf.float32, shape=[None, self.feature_dim],
                                            name="feature_input")
@@ -132,7 +133,8 @@ class SynethesiaModel(Model):
             # No activation because we don't want any value limits
         return y
 
-    def _build_loss(self, generated_img, real_sound, generated_sound, lambda_reconstruct=1., lambda_color=0.00005):
+    def _build_loss(self, generated_img, real_sound, generated_sound,
+                    lambda_reconstruct=1., lambda_color=0.00005, lambda_noise=0.00005):
 
         with tf.variable_scope("loss"):
 
@@ -142,11 +144,16 @@ class SynethesiaModel(Model):
             mean_global_color, _ = tf.nn.moments(generated_img, axes=[1, 2], name="global_color", keep_dims=True)
             _, colorfulness = tf.nn.moments(tf.abs(generated_img - mean_global_color), axes=[-1], name="colorfulness")
             _color_loss = - tf.reduce_sum(colorfulness)
-            color_loss = tf.identity(_color_loss, name="color_loss")
-            #color_loss = - tf.reduce_sum(tf.image.total_variation(images=generated_img), name="color_loss")
+            color_loss = _color_loss
+            color_loss = tf.identity(color_loss, name="color_loss")
             tf.losses.add_loss(color_loss)
 
-            _total_loss = lambda_reconstruct * reconstruction_loss + lambda_color * color_loss
+            noise_loss = tf.reduce_sum(tf.image.total_variation(images=generated_img), name="noise_loss")
+            tf.losses.add_loss(noise_loss)
+
+            _total_loss = (lambda_reconstruct * reconstruction_loss +
+                           lambda_color * color_loss +
+                           lambda_noise * noise_loss)
             total_loss = tf.identity(_total_loss, name="total_loss")
             tf.losses.add_loss(total_loss)
 
