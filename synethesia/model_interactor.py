@@ -1,6 +1,6 @@
 import time
 
-from interfaces import CustomSession, SessionHook, Trainable, Inferable
+from .interfaces import CustomSession, SessionHook, Trainable, Inferable
 
 
 def time_diff(start_time):

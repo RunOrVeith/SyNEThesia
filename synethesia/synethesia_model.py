@@ -1,7 +1,7 @@
 import tensorflow as tf
 
-from ops import *
-from interfaces import Model
+from .ops import *
+from .interfaces import Model
 
 
 class SynethesiaModel(Model):
@@ -134,30 +134,53 @@ class SynethesiaModel(Model):
         return y
 
     def _build_loss(self, generated_img, real_sound, generated_sound,
-                    lambda_reconstruct=1., lambda_color=0.00005, lambda_noise=1.):
+                    lambda_reconstruct=10., lambda_color=1.0, lambda_colorfulness=1.0, lambda_noise=1.):
 
         with tf.variable_scope("loss"):
 
-            reconstruction_loss = tf.losses.mean_squared_error(labels=real_sound, predictions=generated_sound,
-                                                               scope="mean_squared_error")
+            sound_reconstruction_loss = self._add_sound_reconstruction_loss(real_sound=real_sound,
+                                                                            generated_sound=generated_sound)
+            color_loss = self._add_color_loss(generated_img)
+            colorfulness_loss = self._add_colorfulness_loss(generated_img)
+            noise_loss = self._add_noise_loss(generated_img)
 
-            mean_global_color, _ = tf.nn.moments(generated_img, axes=[1, 2], name="global_color", keep_dims=True)
-            _, colorfulness = tf.nn.moments(tf.abs(generated_img - mean_global_color), axes=[-1], name="colorfulness")
-            _color_loss = - tf.reduce_sum(colorfulness)
-            color_loss = _color_loss
-            color_loss = tf.identity(color_loss, name="color_loss")
-            tf.losses.add_loss(color_loss)
-
-            noise_loss = tf.reduce_min(tf.image.total_variation(images=generated_img), name="noise_loss")
-            tf.losses.add_loss(noise_loss)
-
-            _total_loss = (lambda_reconstruct * reconstruction_loss +
+            _total_loss = (lambda_reconstruct * sound_reconstruction_loss +
                            lambda_color * color_loss +
+                           lambda_colorfulness * colorfulness_loss +
                            lambda_noise * noise_loss)
             total_loss = tf.identity(_total_loss, name="total_loss")
             tf.losses.add_loss(total_loss)
 
         return total_loss
+
+    def _add_sound_reconstruction_loss(self, real_sound, generated_sound):
+        sound_reconstruction_loss = tf.losses.mean_squared_error(labels=real_sound, predictions=generated_sound,
+                                                                 scope="sound_reconstruction_loss")
+        return sound_reconstruction_loss
+
+    def _add_color_loss(self, generated_img):
+        mean_global_color, _ = tf.nn.moments(generated_img, axes=[1, 2], name="global_color", keep_dims=True)
+        _, colorfulness = tf.nn.moments(tf.abs(generated_img - mean_global_color), axes=[-1], name="colorfulness")
+        _color_loss = - tf.reduce_sum(colorfulness)
+        color_loss = _color_loss
+        color_loss = tf.identity(color_loss, name="color_loss")
+        tf.losses.add_loss(color_loss)
+        return color_loss
+
+    def _add_colorfulness_loss(self, generated_img, num_colors=9):
+        binned_values = tf.reshape(tf.floor(generated_img * (num_colors - 1)), [-1])
+        binned_values = tf.cast(binned_values, tf.int32)
+        ones = tf.ones_like(binned_values, dtype=tf.int32)
+        histogram = tf.unsorted_segment_sum(ones, binned_values, num_colors)
+        colorfulness_loss = tf.cast(- tf.reduce_max(histogram), tf.float32, name="colorfulness_loss")
+        tf.losses.add_loss(colorfulness_loss)
+        return colorfulness_loss
+
+    def _add_noise_loss(self, generated_img):
+        _noise_loss = tf.reduce_sum(tf.image.total_variation(images=generated_img))
+        noise_loss = tf.divide(_noise_loss, tf.cast(tf.size(generated_img), tf.float32), name="noise_loss")
+        tf.losses.add_loss(noise_loss)
+        return noise_loss
 
     def _build_optimizer(self, loss, decay_rate=1., decay_steps=100000):
         with tf.variable_scope("optimizer"):
