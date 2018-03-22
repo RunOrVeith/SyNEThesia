@@ -2,11 +2,11 @@ import numpy as np
 from pathlib import Path
 from PIL import Image
 
-from synethesia_model import SynethesiaModel
-from model_interactor import TrainingSession, InferenceSession
-from interfaces import Trainable, Inferable
-from feature_creators import logfbank_features
-from audio_chunk_loader import StaticSongLoader
+from .synethesia_model import SynethesiaModel
+from .model_interactor import TrainingSession, InferenceSession
+from .interfaces import Trainable, Inferable
+from .feature_creators import logfbank_features
+from .audio_chunk_loader import StaticSongLoader
 
 
 def random_start_img(img_size, batch_size):
@@ -98,24 +98,3 @@ class Synethesia(object):
     def infer_and_stream(self, model_name, data_provider):
         # TODO implement streaming inference
         raise NotImplemented("Streaming based inference not implemented.")
-
-
-if __name__ == "__main__":
-
-    train = True
-    batch_size = 32
-    img_size = (256, 128)
-    model_name = "loss_tests"
-    learning_rate = 0.0001
-    target_dir = "/tmp"
-
-    song_files=["/home/veith/Projects/PartyGAN/data/Bearded Skull - 420 [Hip Hop Instrumental]/audio/soundtrack.mp3",
-                "/home/veith/Projects/PartyGAN/data/Gorillaz - Feel Good Inc. (Official Video)/audio/soundtrack.mp3",
-                #"/home/veith/Projects/PartyGAN/data/Gramatik   Just Jammin/audio/soundtrack.mp3"
-                ]
-
-    synethesia = Synethesia(song_files=song_files, batch_size=batch_size, img_size=img_size)
-    if train:
-        synethesia.train(model_name=model_name, learning_rate=learning_rate)
-    else:
-        synethesia.infer_and_store(model_name=model_name, target_dir=target_dir)
