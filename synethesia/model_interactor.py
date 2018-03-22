@@ -15,8 +15,9 @@ def time_diff(start_time):
 
 class Trainable(object, metaclass=abc.ABCMeta):
 
-    def __init__(self, model):
-        self.training_session = TrainingSession(model=model, generate_train_dict=self.generate_train_dict)
+    def __init__(self, model, learning_rate):
+        self.training_session = TrainingSession(model=model, generate_train_dict=self.generate_train_dict,
+                                                 learning_rate=learning_rate)
 
     @abc.abstractmethod
     def generate_train_dict(self, learning_rate, input_features, batch_size):
@@ -35,7 +36,7 @@ class Inferable(object, metaclass=abc.ABCMeta):
 
 class SessionHook():
 
-    def __init__(self, f, p=None):
+    def __init__(self, f, p=lambda _: ()):
         self.f = f
         self.p = p
         self.requirements = list(inspect.signature(f).parameters)[1:]
@@ -71,7 +72,7 @@ class CustomSession(object, metaclass=Hookable):
     def __init__(self, model):
         self.model = model
 
-    def utilize_session(self, model_name, data_provider):
+    def utilize_session(self, model_name, data_provider, **kwargs):
         with SessionHandler(model=self.model, model_name=model_name) as session_handler:
             session_handler.load_weights_or_init()
             start_time = time.time()
@@ -79,6 +80,7 @@ class CustomSession(object, metaclass=Hookable):
             print(f"{'Resuming' if step > 0 else 'Starting'} to train {model_name}: at step {step}")
             available = locals()
             available.pop("self", None)
+            available.update(kwargs)
 
             for input_feature in data_provider:
                 available["input_feature"] = input_feature
@@ -87,29 +89,34 @@ class CustomSession(object, metaclass=Hookable):
                     available.update(provided)
 
 
-class TrainingSession(object):
+class TrainingSession(CustomSession):
 
-    # TODO implement training validation and inference as same loop with customizable hooks
-
-    def __init__(self, model, generate_train_dict):
-        self.model = model
+    def __init__(self, model, learning_rate, generate_train_dict):
+        self.learning_rate = learning_rate
         self.generate_train_dict = generate_train_dict
+        super().__init__(model=model)
 
-    def train(self, model_name, data_provider, learning_rate=0.0001, save_every_n_steps=1000):
-        with SessionHandler(model=self.model, model_name=model_name) as session_handler:
-            session_handler.load_weights_or_init()
-            start_time = time.time()
-            step = session_handler.step
-            print(f"{'Resuming' if step > 0 else 'Starting'} to train {model_name}: at step {step}")
+    def train(self, model_name, data_provider, save_every_n_steps=10):
+        self.utilize_session(model_name=model_name, data_provider=data_provider,
+                             save_every_n_steps=save_every_n_steps)
 
-            for input_feature in data_provider:
-                feed_dict = self.generate_train_dict(input_features=input_feature,
-                                                     learning_rate=learning_rate)
-                step, _ = session_handler.training_step(feed_dict=feed_dict)
+    @SessionHook
+    def _train_once(self, session_handler, input_feature):
+        feed_dict = self.generate_train_dict(input_features=input_feature)
+        feed_dict.update({self.model.learning_rate: self.learning_rate})
+        step, _ = session_handler.training_step(feed_dict=feed_dict)
+        return step
 
-                if step % save_every_n_steps == 0 and step > 0:
-                    session_handler.save(step=step)
-                    print(f"Step {step}, time: {time_diff(start_time)}: Saving in {session_handler.checkpoint_dir}")
+    @_train_once.provides
+    def _train_once(self):
+        return ("step",)
+
+    @SessionHook
+    def _maybe_save(self, session_handler, step, start_time, save_every_n_steps):
+        if step % save_every_n_steps == 0 and step > 0:
+            session_handler.save(step=step)
+            print(f"Step {step}, time: {time_diff(start_time)}: Saving in {session_handler.checkpoint_dir}")
+
 
 
 class InferenceSession(object):
