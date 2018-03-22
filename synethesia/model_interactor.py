@@ -128,7 +128,6 @@ class InferenceSession(object):
 
                 feed_dict = self.generate_inference_dict(input_features=input_feature)
                 results = session_handler.inference_step(feed_dict=feed_dict)
-
                 yield results
 
 

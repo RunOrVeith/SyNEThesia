@@ -38,19 +38,22 @@ if __name__ == "__main__":
     from feature_creators import logfbank_features
 
     train = False
-    batch_size = 16
-    train_loader = StaticSongLoader(song_files=["/home/veith/Projects/PartyGAN/data/Bearded Skull - 420 [Hip Hop Instrumental]/audio/soundtrack.mp3"],
-                                    batch_size=batch_size, load_n_songs_at_once=1,
-                                    to_infinity=train, feature_extractor=logfbank_features)
+    batch_size = 32
+    train_loader = StaticSongLoader(song_files=[#"/home/veith/Projects/PartyGAN/data/Bearded Skull - 420 [Hip Hop Instrumental]/audio/soundtrack.mp3",
+                                                "/home/veith/Projects/PartyGAN/data/Gorillaz - Feel Good Inc. (Official Video)/audio/soundtrack.mp3",
+                                                ],
+                                    batch_size=batch_size, load_n_songs_at_once=2,
+                                    to_infinity=train, feature_extractor=logfbank_features, allow_shuffle=train)
 
     synethesia = Synethesia(feature_dim=train_loader.feature_dim)
-
+    model_name = "overfit_multiple"
     if train:
-        synethesia.training_session.train(model_name="overfit_bearded_skull", data_provider=train_loader, learning_rate=0.0001)
+        synethesia.training_session.train(model_name=model_name, data_provider=train_loader, learning_rate=0.0001)
     else:
         img_id = 0
-        for i, (imgs, sounds) in enumerate(synethesia.inferece_session.infer(model_name="overfit_bearded_skull",
+        # TODO make inference go song by song
+        for i, (imgs, sounds) in enumerate(synethesia.inferece_session.infer(model_name=model_name,
                                                                              data_provider=train_loader)):
                 for j, img in enumerate(imgs):
                     img_id += 1
-                    Image.fromarray((img * 255).astype(np.uint8)).save(f"/tmp/test_bearded_skull/{img_id}.png")
+                    Image.fromarray((img * 255).astype(np.uint8)).save(f"/tmp/test_feel_good_inc/{img_id}.png")

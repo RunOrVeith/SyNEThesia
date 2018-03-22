@@ -10,6 +10,7 @@ from data_loaders import BatchCreator
 class StaticSongLoader(object):
 
     # TODO abstract into reusable class
+    # TODO convert to use tf.data
 
     def __init__(self, song_files, batch_size, feature_extractor,
                  to_infinity=False, load_n_songs_at_once=5, allow_shuffle=True):

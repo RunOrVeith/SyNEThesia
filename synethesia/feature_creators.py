@@ -2,6 +2,8 @@ import numpy as np
 import python_speech_features as psf
 
 
+# TODO raw wav feature
+
 def _next_power_of_two(number):
     return int(2 ** np.ceil(np.log2(np.maximum(1., number))))
 

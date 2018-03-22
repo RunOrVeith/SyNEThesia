@@ -134,7 +134,7 @@ class SynethesiaModel(Model):
         return y
 
     def _build_loss(self, generated_img, real_sound, generated_sound,
-                    lambda_reconstruct=1., lambda_color=0.00005, lambda_noise=0.00005):
+                    lambda_reconstruct=1., lambda_color=0.00005, lambda_noise=1.):
 
         with tf.variable_scope("loss"):
 
@@ -148,7 +148,7 @@ class SynethesiaModel(Model):
             color_loss = tf.identity(color_loss, name="color_loss")
             tf.losses.add_loss(color_loss)
 
-            noise_loss = tf.reduce_sum(tf.image.total_variation(images=generated_img), name="noise_loss")
+            noise_loss = tf.reduce_min(tf.image.total_variation(images=generated_img), name="noise_loss")
             tf.losses.add_loss(noise_loss)
 
             _total_loss = (lambda_reconstruct * reconstruction_loss +
