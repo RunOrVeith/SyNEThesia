@@ -36,10 +36,13 @@ class Inferable(object, metaclass=abc.ABCMeta):
 
 class SessionHook():
 
-    def __init__(self, f, p=lambda _: ()):
+    def __init__(self, f, p=None, y=None):
         self.f = f
-        self.p = p
-        self.requirements = list(inspect.signature(f).parameters)[1:]
+        self.p = (lambda _: ()) if p is None else p
+        self.has_final_result = y is not None
+        self.y = y
+        self.y_requirements = list(inspect.signature(y).parameters)[1:] if y is not None else ()
+        self.f_requirements = list(inspect.signature(f).parameters)[1:]
 
     def __get__(self, obj, objtype):
         # Needed to be able to decorate instance methods
@@ -47,15 +50,27 @@ class SessionHook():
 
     def __call__(obj, self, **kwargs):
         kwargs.pop("self", None)
-        arguments = {key: kwargs[key] for key in obj.requirements}
+        arguments = {key: kwargs[key] for key in obj.f_requirements}
         provided = obj.p(self)
         provisions = obj.f(self, **arguments)
         if not isinstance(provisions, tuple):
             provisions = (provisions, )
         return {var: provisions[i] for i, var in enumerate(provided)}
 
-    def provides(self, f):
-        return SessionHook(f=self.f, p=f)
+    def get_yieldables(obj, self, **kwargs):
+        if obj.y is None:
+            return None
+        kwargs.pop("self", None)
+        arguments = {key: kwargs[key] for key in obj.y_requirements}
+        provisions = obj.y(self, **arguments)
+        return provisions
+
+    def provides(self, p):
+        return SessionHook(f=self.f, p=p, y=self.y)
+
+    def yields(self, y):
+        return SessionHook(f=self.f, p=self.p, y=y)
+
 
 class Hookable(type):
 
@@ -77,16 +92,19 @@ class CustomSession(object, metaclass=Hookable):
             session_handler.load_weights_or_init()
             start_time = time.time()
             step = session_handler.step
-            print(f"{'Resuming' if step > 0 else 'Starting'} to train {model_name}: at step {step}")
             available = locals()
             available.pop("self", None)
             available.update(kwargs)
+            print(f"{'Resuming' if step > 0 else 'Starting'} {model_name}: at step {step}")
 
             for input_feature in data_provider:
                 available["input_feature"] = input_feature
                 for hook in self.hooks:
                     provided = hook(self=self, **available)
                     available.update(provided)
+
+                    if hook.has_final_result:
+                        yield hook.get_yieldables(self=self, **available)
 
 
 class TrainingSession(CustomSession):
@@ -118,24 +136,28 @@ class TrainingSession(CustomSession):
             print(f"Step {step}, time: {time_diff(start_time)}: Saving in {session_handler.checkpoint_dir}")
 
 
-
-class InferenceSession(object):
+class InferenceSession(CustomSession):
 
     def __init__(self, model, generate_inference_dict):
-        self.model = model
         self.generate_inference_dict = generate_inference_dict
+        super().__init__(model=model)
 
     def infer(self, model_name, data_provider):
-        start_time = time.time()
+        yield from self.utilize_session(model_name=model_name, data_provider=data_provider)
 
-        with SessionHandler(model=self.model, model_name=model_name) as session_handler:
-            session_handler.load_weights_or_init()
+    @SessionHook
+    def _infer_once(self, session_handler, input_feature):
+        feed_dict = self.generate_inference_dict(input_features=input_feature)
+        results = session_handler.inference_step(feed_dict=feed_dict)
+        return results
 
-            for input_feature in data_provider:
+    @_infer_once.provides
+    def _infer_once(self):
+        return ("results",)
 
-                feed_dict = self.generate_inference_dict(input_features=input_feature)
-                results = session_handler.inference_step(feed_dict=feed_dict)
-                yield results
+    @_infer_once.yields
+    def _infer_once(self, results):
+        return results
 
 
 if __name__ == "__main__":
