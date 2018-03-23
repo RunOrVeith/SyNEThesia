@@ -73,11 +73,3 @@ class SampledSong(object):
     def extract_features(self):
         features = self.feature_extraction_method(signal=self.signal, samplerate=self.samplerate, fps=self.fps)
         return features
-
-
-if __name__ == "__main__":
-    from feature_creators import logfbank_features
-    song = SampledSong("/home/veith/Projects/PartyGAN/data/Bearded Skull - 420 [Hip Hop Instrumental]/audio/soundtrack.mp3",
-                       feature_extraction_method=logfbank_features)
-    for feature in song:
-        print(feature)

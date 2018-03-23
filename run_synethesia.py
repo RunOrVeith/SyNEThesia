@@ -8,8 +8,6 @@ from synethesia import Synethesia
 
 def parse_args():
 
-
-
     parser = argparse.ArgumentParser(description="""SyNEThesia is a deep neural network that
                                                  visualizes music (and other sound).""")
 

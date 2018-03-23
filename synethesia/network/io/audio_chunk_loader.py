@@ -68,13 +68,3 @@ class StaticSongLoader(object):
                 feature_batcher = BatchCreator(iterable=self.loaded_snippets, batch_size=self.batch_size,
                                                allow_shuffle=True)
                 yield from feature_batcher
-
-
-
-if __name__ == "__main__":
-    from feature_creators import logfbank_features
-    song_loader = StaticSongLoader(song_files=["/home/veith/Projects/PartyGAN/data/Bearded Skull - 420 [Hip Hop Instrumental]/audio/soundtrack.mp3"],
-                                   feature_extractor=logfbank_features,
-                                   batch_size=1, load_n_songs_at_once=1)
-    for audio_chunk in song_loader:
-        print(audio_chunk)

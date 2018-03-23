@@ -83,21 +83,3 @@ class InferenceSession(CustomSession):
     @_infer_once.yields
     def _infer_once(self, results):
         return results
-
-
-if __name__ == "__main__":
-    from audio_chunk_loader import StaticSongLoader
-    from synethesia_model import SynethesiaModel
-    from PIL import Image
-    from feature_creators import logfbank_features
-
-    train = False
-    train_loader = StaticSongLoader(song_files=["/home/veith/Projects/PartyGAN/data/Bearded Skull - 420 [Hip Hop Instrumental]/audio/soundtrack.mp3"],
-                                    batch_size=16, load_n_songs_at_once=1,
-                                    to_infinity=train, feature_extractor=logfbank_features)
-
-    synethesia = SynethesiaModel(feature_dim=41)
-
-    sess = TestSession(model=synethesia)
-    sess.print_input(input_feature="Hi")
-    sess.utilize_session(model_name="test", data_provider=train_loader)

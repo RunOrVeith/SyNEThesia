@@ -210,9 +210,3 @@ class SynethesiaModel(Model):
             tf.summary.scalar(name=loss.op.name, tensor=loss)
 
         return tf.summary.merge_all()
-
-
-
-if __name__ == "__main__":
-    net = SynethesiaModel(feature_dim=64)
-    net.initialize()
