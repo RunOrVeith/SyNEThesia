@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+from matplotlib.animation import FuncAnimation
+import numpy as np
+
 plt.rcParams['toolbar'] = 'None'
 
 
@@ -7,28 +9,20 @@ class LiveViewer(object):
 
     def __init__(self, approx_fps, border_color):
         self.pause_time = 1 / approx_fps
-        fig, self.img_view = plt.subplots()
-        self.img_view.set_frame_on(False)
-        self.img_view.get_xaxis().set_visible(False)
-        self.img_view.get_yaxis().set_visible(False)
+        self.fig = plt.figure()
         plt.tight_layout(pad=0)
-        fig.patch.set_facecolor(border_color)
-        fig.canvas.mpl_connect('close_event', self.handle_close)
-        fig.canvas.mpl_connect('key_press_event', self.toggle_fullscreen)
+        self.fig.patch.set_facecolor(border_color)
+        self.fig.canvas.mpl_connect('close_event', self.handle_close)
+        self.fig.canvas.mpl_connect('key_press_event', self.toggle_fullscreen)
 
-    def __enter__(self):
-        plt.ion()
-        self.toggle_fullscreen()
-        return self
+    def display(self, image_generator):
+        im = plt.imshow(np.zeros((1, 1, 3)), animated=True)
+        def update(frame, *_):
+            im.set_array(frame)
+            return im,
 
-    def __exit__(self, *args, **kwargs):
-        plt.ioff()
-        plt.close("all")
-        # TODO exiting causes a tkinter error during update while it pauses
-
-    def display(self, image):
-        self.img_view.imshow(image)
-        plt.pause(self.pause_time)
+        ani = FuncAnimation(self.fig, func=update, frames=image_generator, interval=self.pause_time, blit=True)
+        plt.show()
 
     @staticmethod
     def toggle_fullscreen(event=None):

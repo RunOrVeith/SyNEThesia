@@ -97,12 +97,19 @@ class Synethesia(object):
 
 
     def infer_and_stream(self, model_name, approx_fps=24, border_color="black"):
+        # TODO enable multi song inference
         infer_loader = StaticSongLoader(song_files=(self.song_files[0],), feature_extractor=self.feature_extractor,
-                                        batch_size=self.batch_size, load_n_songs_at_once=1,
+                                        batch_size=1, load_n_songs_at_once=1,
                                         to_infinity=False, allow_shuffle=False)
 
+        generator = self._infer(model_name=model_name, data_provider=infer_loader)
+
+        def yield_single_img():
+            for imgs, sounds in generator:
+                for img in imgs:
+                    yield img
+
         print("Starting streaming inference...")
-        with LiveViewer(approx_fps=approx_fps, border_color=border_color) as viewer:
-            for i, (imgs, sounds) in enumerate(self._infer(model_name=model_name, data_provider=infer_loader)):
-                for j, img in enumerate(imgs):
-                    viewer.display(img)
+        viewer = LiveViewer(approx_fps=approx_fps, border_color=border_color)
+        viewer.toggle_fullscreen()
+        viewer.display(image_generator=yield_single_img)
