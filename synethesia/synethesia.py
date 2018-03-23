@@ -51,9 +51,25 @@ class Synethesia(object):
 
     def _song_files_to_list(self, song_files):
         if not isinstance(song_files, (list, tuple)):
-            # TODO implement reading song  names from file
-            raise NotImplemented("Files containg data not supported right now")
-        return song_files
+            pth = Path(song_files).resolve()
+
+            print(f"Reading songs from {str(pth)}.")
+            if not pth.exists():
+                raise ValueError(f"Could not find {str(song_files)}")
+
+            if pth.is_dir():
+                contents = [str(content) for content in pth.iterdir() if content.is_file() and content.suffix == ".mp3"]
+            elif pth.is_file():
+                if pth.suffix == ".mp3":
+                    contents =  str(pth),
+                else:
+                    contents = [content.strip() for content in pth.read_text().splitlines()]
+
+        else:
+            contents = song_files
+
+        print(f"Received {len(contents)} sound files.")
+        return contents
 
     def train(self, model_name, learning_rate=0.0001, songs_at_once=3):
         train_loader = StaticSongLoader(song_files=self.song_files, feature_extractor=self.feature_extractor,

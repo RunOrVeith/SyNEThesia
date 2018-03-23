@@ -5,6 +5,7 @@ import time
 
 import tensorflow as tf
 
+from synethesia.framework.model_skeleton import Model
 
 class SessionHandler(object):
 
@@ -183,7 +184,6 @@ class CustomSession(object, metaclass=Hookable):
         self.model = model
 
     def utilize_session(self, model_name, data_provider, **kwargs):
-        print("Utilizing session")
         with SessionHandler(model=self.model, model_name=model_name) as session_handler:
             session_handler.load_weights_or_init()
             start_time = time.time()
