@@ -8,7 +8,7 @@ from synethesia import Synethesia
 
 if __name__ == "__main__":
 
-    train = bool(sys.argv[1])
+    mode = sys.argv[1]
     batch_size = 32
     img_size = (256, 128)
     model_name = "loss_tests"
@@ -21,7 +21,9 @@ if __name__ == "__main__":
                 ]
 
     synethesia = Synethesia(song_files=song_files, batch_size=batch_size, img_size=img_size)
-    if train:
+    if mode.lower() == "train":
         synethesia.train(model_name=model_name, learning_rate=learning_rate)
-    else:
+    elif mode.lower() == "store":
         synethesia.infer_and_store(model_name=model_name, target_dir=target_dir)
+    elif mode.lower() == "stream":
+        synethesia.infer_and_stream(model_name=model_name)
