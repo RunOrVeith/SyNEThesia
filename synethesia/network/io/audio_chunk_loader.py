@@ -3,8 +3,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import numpy as np
 
-from .sampled_song import SampledSong
-from .data_loaders import BatchCreator
+from synethesia.network.io.sampled_song import SampledSong
+from synethesia.framework import BatchCreator
 
 
 class StaticSongLoader(object):

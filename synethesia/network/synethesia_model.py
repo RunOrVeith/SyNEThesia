@@ -1,7 +1,7 @@
 import tensorflow as tf
 
-from .ops import *
-from .interfaces import Model
+from synethesia.framework.ops import *
+from synethesia.framework.model_skeleton import Model
 
 
 class SynethesiaModel(Model):

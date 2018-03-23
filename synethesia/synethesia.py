@@ -2,12 +2,9 @@ import numpy as np
 from pathlib import Path
 from PIL import Image
 
-from .synethesia_model import SynethesiaModel
-from .model_interactor import TrainingSession, InferenceSession
-from .interfaces import Trainable, Inferable
-from .feature_creators import logfbank_features
-from .audio_chunk_loader import StaticSongLoader
-from .live_viewer import LiveViewer
+from synethesia.network import SynethesiaModel, logfbank_features, StaticSongLoader, LiveViewer
+from synethesia.framework import TrainingSession, InferenceSession, Trainable, Inferable
+
 
 def random_start_img(img_size, batch_size):
     generation_shape = (batch_size, *img_size, 3)

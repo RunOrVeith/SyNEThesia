@@ -1,6 +1,7 @@
 import time
+import abc
 
-from .interfaces import CustomSession, SessionHook, Trainable, Inferable
+from .session_management import CustomSession, SessionHook
 
 
 def time_diff(start_time):
@@ -8,6 +9,20 @@ def time_diff(start_time):
     h, m = divmod(m, 60)
     d, h = divmod(h, 24)
     return "%d:%02d:%02d:%02d" % (d, h, m, s)
+
+
+class Trainable(object, metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def generate_train_dict(self, input_features):
+        pass
+
+
+class Inferable(object, metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def generate_inference_dict(self, input_features):
+        pass
 
 
 class TrainingSession(CustomSession):

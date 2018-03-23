@@ -1,6 +1,6 @@
+from pathlib import Path
 import abc
 import inspect
-from pathlib import Path
 import time
 
 import tensorflow as tf
@@ -128,62 +128,6 @@ class SessionHandler(object):
         else:
             print(f"Initializing new model {self.model_name}")
             self.session.run(tf.global_variables_initializer())
-
-
-class Model(object, metaclass=abc.ABCMeta):
-
-    def __init__(self):
-        self._global_step = None
-        self._learning_rate = None
-        self._optimizer = None
-        self._summary_op = None
-
-        self.is_training = tf.placeholder(dtype=tf.bool, shape=[], name="is_training")
-
-    @abc.abstractmethod
-    def initialize(self, graph):
-        pass
-
-    @property
-    @abc.abstractmethod
-    def data_input(self):
-        pass
-
-    @property
-    @abc.abstractmethod
-    def data_output(self):
-        pass
-
-    @property
-    def optimizer(self):
-        pass
-
-    @property
-    @abc.abstractmethod
-    def learning_rate(self):
-        pass
-
-    @property
-    def training_summary(self):
-        return tf.no_op(name="summary_dummy")
-
-    @property
-    def global_step(self):
-        pass
-
-
-class Trainable(object, metaclass=abc.ABCMeta):
-
-    @abc.abstractmethod
-    def generate_train_dict(self, input_features):
-        pass
-
-
-class Inferable(object, metaclass=abc.ABCMeta):
-
-    @abc.abstractmethod
-    def generate_inference_dict(self, input_features):
-        pass
 
 
 class SessionHook():
