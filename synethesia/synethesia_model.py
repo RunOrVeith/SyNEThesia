@@ -122,6 +122,11 @@ class SynethesiaModel(Model):
     def _build_decoder(self, from_img):
 
         with tf.variable_scope("decoder"):
+            crop_percentage = 0.9
+            batch_size = tf.shape(from_img)[0]
+            crop_size = [batch_size, int(self.img_size[0] * crop_percentage),
+                         int(self.img_size[1] * crop_percentage), 3]
+            from_img = tf.random_crop(value=from_img, size=crop_size, name="random_crop")
             y = conv2d(x=from_img, output_channels=self._channels, kernel=(7, 7), stride=1, scope="7x7_64")
 
             y = residual_block(x=y, output_channels=self._channels, activation=tf.nn.relu, scope="residual_0")
@@ -134,10 +139,9 @@ class SynethesiaModel(Model):
         return y
 
     def _build_loss(self, generated_img, real_sound, generated_sound,
-                    lambda_reconstruct=10., lambda_color=1.0, lambda_colorfulness=1.0, lambda_noise=1.):
+                    lambda_reconstruct=1., lambda_color=10., lambda_colorfulness=10., lambda_noise=10.):
 
         with tf.variable_scope("loss"):
-
             sound_reconstruction_loss = self._add_sound_reconstruction_loss(real_sound=real_sound,
                                                                             generated_sound=generated_sound)
             color_loss = self._add_color_loss(generated_img)
@@ -163,16 +167,18 @@ class SynethesiaModel(Model):
         _, colorfulness = tf.nn.moments(tf.abs(generated_img - mean_global_color), axes=[-1], name="colorfulness")
         _color_loss = - tf.reduce_sum(colorfulness)
         color_loss = _color_loss
-        color_loss = tf.identity(color_loss, name="color_loss")
+        color_loss = tf.divide(color_loss, tf.cast(tf.size(generated_img), tf.float32), name="color_loss")
         tf.losses.add_loss(color_loss)
         return color_loss
 
-    def _add_colorfulness_loss(self, generated_img, num_colors=9):
+    def _add_colorfulness_loss(self, generated_img, num_colors=4):
         binned_values = tf.reshape(tf.floor(generated_img * (num_colors - 1)), [-1])
         binned_values = tf.cast(binned_values, tf.int32)
         ones = tf.ones_like(binned_values, dtype=tf.int32)
         histogram = tf.unsorted_segment_sum(ones, binned_values, num_colors)
-        colorfulness_loss = tf.cast(- tf.reduce_max(histogram), tf.float32, name="colorfulness_loss")
+        _colorfulness_loss = tf.cast(- tf.reduce_max(histogram), tf.float32)
+        colorfulness_loss = tf.divide(_colorfulness_loss, tf.cast(tf.size(generated_img), tf.float32),
+                                      name="colorfulness_loss")
         tf.losses.add_loss(colorfulness_loss)
         return colorfulness_loss
 
