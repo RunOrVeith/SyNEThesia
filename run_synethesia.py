@@ -28,7 +28,8 @@ def parse_args():
                                     otherwise it will be newly created.""")
 
         _parser.add_argument("data", type=str,
-                             help="""Either a file containing paths to .mp3's, or a folder containing .mp3's.""")
+                             help="""Either a file containing paths to .mp3's, or a folder containing .mp3's,
+                                     or a single .mp3""")
         _parser.add_argument("-b", "--batch-size", default=1, type=int, dest="batch_size",
                              help="Batch size. Default is %(default)s. Ignored for streaming inference.")
 
@@ -44,7 +45,7 @@ def parse_args():
     train_parser.add_argument("-l", "--learning-rate", default=0.0001, type=float, dest="learning_rate",
                               help="""Learning rate for training. Will be
                                       exponentially decayed over time.
-                                      Defaults to %(defauls)s.""")
+                                      Defaults to %(default)s.""")
 
     store_parser.add_argument("target_dir", default="/tmp", type=str,
                               help="""Target directory for storing the resulting frames.
