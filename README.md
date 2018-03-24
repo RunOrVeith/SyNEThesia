@@ -4,12 +4,14 @@ SyNEThesia is a deep-learning-based music and sound visualizer, and a play of wo
 
 The current version is already looking nice, but there are many ideas still in progress.
 
+
+
 ## Installation and Setup
 
 This network requires python version >= 3.6. (If you don't already have it, I recommend [pyenv](https://github.com/pyenv/pyenv)). I'm assuming that your global python interpreter is python3.6 from here on.
 
 1. Clone this repository to your computer.
-   Let's you've cloned it to `$SYNETHESIA`.
+   Let's say you've cloned it to `$SYNETHESIA`.
 
 2. Create a new virtual environment and activate it:
 
@@ -33,7 +35,7 @@ You may have to install two dependencies:
        sudo apt install ffmpeg youtube-dl
 
 2. `create_music_video.sh img_dir mp3_file`: This script will take all images contained in `img_dir` and merges them into a music video with the audio of `mp3_file`.
-Note that the audio will be clipped if not enough images are available. This assumes 24 frames per second at the moment. The video will be saved in `img_dir`.
+Note that the audio will be clipped if not enough images are available. This assumes 48 frames per second at the moment (based off of scipy sampling with ~48kHz apparently). The video will be saved in `img_dir`.
 You also need `ffmpeg` for this (see above).
 
 3. `run_synethesia.py`: This is the main file to start. Read the bottom of this README to see a description of the CLI. You can also get this information by running `run_synethesia.py -h` and `run_synethesia {mode} -h`.
@@ -73,7 +75,7 @@ Comming soon
 - [ ] Implement all ToDo's in the code
 - [ ] Hook a microphone to inference
 - [ ] Enforce base image similarity
-- [ ] Investigate large file amount
+- [ ] Investigate large file amount (--> samplerate is higher than 24 in scipy file reading)
 - [ ] `Infer` mode should delete the images and create the music video itself
 - [ ] Write Docstrings
 - [ ] Write unit tests
@@ -138,7 +140,7 @@ First, you need to supply a mode:
             data                  Either a file containing paths to .mp3's, or a folder
                                   containing .mp3's, or a single .mp3
             target_dir            Target directory for storing the resulting frames.
-                                  Warning: There may be many. Defaults to /tmp.
+                                  Warning: There may be many.
 
             optional arguments:
             -h, --help            show this help message and exit
