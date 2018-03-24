@@ -27,10 +27,10 @@ def fft_features(signal, fps, **kwargs):
 
 
 def logfbank_features(signal, samplerate, fps, num_filt=40, num_cepstra=40, **kwargs):
-    winstep = 1 / fps
-    winlen = winstep * 2.5
+    winstep = 2 / fps
+    winlen = winstep * 2
     feat, energy = psf.fbank(signal=signal, samplerate=samplerate,
-                                winlen=winlen, winstep=winstep, nfilt=num_filt)
+                             winlen=winlen, winstep=winstep, nfilt=num_filt)
     feat = np.log(feat)
     feat = psf.dct(feat, type=2, axis=1, norm='ortho')[:, :num_cepstra]
     feat = psf.lifter(feat,L=22)
@@ -41,4 +41,8 @@ def logfbank_features(signal, samplerate, fps, num_filt=40, num_cepstra=40, **kw
 
     mat = (feat - np.mean(feat, axis=0)) / (0.5 * np.std(feat, axis=0))
     mat = np.concatenate((mat, energy), axis=1)
+
+    duration = signal.shape[0] / samplerate
+    expected_frames = fps * duration
+    assert mat.shape[0] - expected_frames <= 1, "Producted feature number does not match framerate"
     return mat

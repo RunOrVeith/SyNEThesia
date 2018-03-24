@@ -30,7 +30,7 @@ def parse_args():
         _parser.add_argument("data", type=str,
                              help="""Either a file containing paths to .mp3's, or a folder containing .mp3's,
                                      or a single .mp3""")
-        _parser.add_argument("-b", "--batch-size", default=1, type=int, dest="batch_size",
+        _parser.add_argument("-b", "--batch-size", default=32, type=int, dest="batch_size",
                              help="Batch size. Default is %(default)s. Ignored for streaming inference.")
 
         _parser.add_argument("-r", "--n-rows", default=256, type=int, dest="rows",

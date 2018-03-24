@@ -1,7 +1,7 @@
 #! /usr/bin/zsh
 # TODO do in python
 VIDEO_URL=$1
-FPS=$2
+FPS=24
 
 MY_PATH="`dirname \"$0\"`"
 TITLE=`youtube-dl --get-filename -o $MY_PATH'/data/%(title)s/%(title)s.%(ext)s' -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio' $VIDEO_URL`
