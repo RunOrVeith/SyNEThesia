@@ -48,8 +48,9 @@ def parse_args():
                                       Defaults to %(default)s.""")
 
     store_parser.add_argument("target_dir", type=str,
-                              help="""Target directory for storing the resulting frames.
-                                      Warning: There may be many.""")
+                              help="""Target directory for storing the resulting video.
+                                      Warning: There may be many frames stored here intermediately,
+                                      so make sure you have enough disc space.""")
 
     arguments = parser.parse_args()
     return arguments

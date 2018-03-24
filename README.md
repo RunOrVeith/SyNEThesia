@@ -27,18 +27,14 @@ This network requires python version >= 3.6. (If you don't already have it, I re
 
 ## Running SyNEThesia
 
-In the toplevel of `$SYNETHESIA`, there are 3 files that are relevant:
+In the toplevel of `$SYNETHESIA`, there are 2 files that are relevant:
 
 1. `./youtube-to-song-frames.sh link`: Downloads the youtube video `link` to `$SYNETHESIA/data`, and extracts an mp3 audio file, as well as the image frames from its video (the images are currently not needed, but will be in the future). You can also supply your own mp3 files instead of using this script.
 You may have to install two dependencies:
 
        sudo apt install ffmpeg youtube-dl
 
-2. `create_music_video.sh img_dir mp3_file`: This script will take all images contained in `img_dir` and merges them into a music video with the audio of `mp3_file`.
-Note that the audio will be clipped if not enough images are available. The video will be saved in `img_dir`.
-You also need `ffmpeg` for this (see above).
-
-3. `run_synethesia.py`: This is the main file to start. Read the bottom of this README to see a description of the CLI. You can also get this information by running `run_synethesia.py -h` and `run_synethesia {mode} -h`.
+2. `run_synethesia.py`: This is the main file to start. Read the bottom of this README to see a description of the CLI. You can also get this information by running `run_synethesia.py -h` and `run_synethesia {mode} -h`.
 
 
 ## General Information
@@ -46,7 +42,8 @@ You also need `ffmpeg` for this (see above).
 Training takes a while before the images start to look nice and the sound is clearly reproduced. I let it run overnight for about 7-8 hours on a GTX 1070.
 Of course, untrained versions might also look cool, but you won't be able to "see the sound".
 
-If you use the `infer` mode, be aware that **many** images will be saved to your disk (depending on the length of your song).
+If you use the `infer` mode, be aware that **many** images will be saved to your disk (think 24 * song duration in seconds).
+They will be deleted automatically, but if you have little disc space it may become a problem.
 
 The `framework` submodule will probably be moved to a independent repository at some point in the future. SyNEThesia uses it to implement its functionality, but it itself is an abstract set of classes to simply tensorflow development.
 
@@ -145,7 +142,8 @@ First, you need to supply a mode:
             data                  Either a file containing paths to .mp3's, or a folder
                                   containing .mp3's, or a single .mp3
             target_dir            Target directory for storing the resulting frames.
-                                  Warning: There may be many.
+                                  Warning: There may be many frames stored here intermediately,
+                                           so make sure you have enough disc space.
 
             optional arguments:
             -h, --help            show this help message and exit

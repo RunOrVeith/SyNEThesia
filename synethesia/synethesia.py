@@ -2,7 +2,7 @@ import numpy as np
 from pathlib import Path
 from PIL import Image
 
-from synethesia.network import SynethesiaModel, logfbank_features, StaticSongLoader, LiveViewer
+from synethesia.network import SynethesiaModel, logfbank_features, StaticSongLoader, LiveViewer, VideoCreator
 from synethesia.framework import TrainingSession, InferenceSession, Trainable, Inferable
 
 
@@ -108,6 +108,8 @@ class Synethesia(object):
                 img_id += 1
                 Image.fromarray((img * 255).astype(np.uint8)).save(str(_target_dir / f"{img_id}.png"))
 
+        video_creator = VideoCreator()
+        video_creator(png_folder=_target_dir, mp3_file=self.song_files[0])
 
     def infer_and_stream(self, model_name, approx_fps=24, border_color="black"):
         # TODO enable multi song inference
