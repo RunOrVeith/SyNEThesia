@@ -47,9 +47,9 @@ def parse_args():
                                       exponentially decayed over time.
                                       Defaults to %(default)s.""")
 
-    store_parser.add_argument("target_dir", default="/tmp", type=str,
+    store_parser.add_argument("target_dir", type=str,
                               help="""Target directory for storing the resulting frames.
-                                      Warning: There may be many. Defaults to %(default)s.""")
+                                      Warning: There may be many.""")
 
     arguments = parser.parse_args()
     return arguments
@@ -83,7 +83,7 @@ if __name__ == "__main__":
         if mode.lower() == "train":
             learning_rate = arguments.learning_rate
             synethesia.train(model_name=model_name, learning_rate=learning_rate)
-        elif mode.lower() == "store":
+        elif mode.lower() == "infer":
             target_dir = arguments.target_dir
             synethesia.infer_and_store(model_name=model_name, target_dir=target_dir)
         elif mode.lower() == "stream":
