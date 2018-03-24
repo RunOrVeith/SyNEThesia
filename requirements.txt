@@ -5,3 +5,4 @@ pydub==0.21.0
 python-speech-features==0.6
 scipy==1.0.0
 tensorflow-gpu==1.6.0
+ffmpy==0.2.2
