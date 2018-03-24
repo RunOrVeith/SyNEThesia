@@ -26,9 +26,9 @@ class BatchCreator(object):
             for _ in range(self.batch_size):
                 instances.append(next(self.iterator))
         except StopIteration:
-            # Number of elements in iterator is not a multuple of batch_size,
+            # Number of elements in iterator is not a multiple of batch_size,
             # just batch the remaining instances
             if len(instances) == 0:
-                raise StopIteration()
+                raise
 
         return np.stack(instances, axis=0)
