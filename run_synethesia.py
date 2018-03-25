@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 
 from synethesia import Synethesia
-
+from synethesia.network import AudioRecorder
 
 def parse_args():
 
@@ -27,9 +27,6 @@ def parse_args():
                                     If it exists in the local checkpoints folder, the model will be loaded,
                                     otherwise it will be newly created.""")
 
-        _parser.add_argument("data", type=str,
-                             help="""Either a file containing paths to .mp3's, or a folder containing .mp3's,
-                                     or a single .mp3""")
         _parser.add_argument("-b", "--batch-size", default=32, type=int, dest="batch_size",
                              help="Batch size. Default is %(default)s. Ignored for streaming inference.")
 
@@ -52,6 +49,17 @@ def parse_args():
                                       Warning: There may be many frames stored here intermediately,
                                       so make sure you have enough disc space.""")
 
+    train_parser.add_argument("data", type=str,
+                              help="""Either a file containing paths to .mp3's, or a folder containing .mp3's,
+                                      or a single .mp3""")
+    store_parser.add_argument("data", type=str,
+                              help="""Either a file containing paths to .mp3's, or a folder containing .mp3's,
+                                      or a single .mp3""")
+
+    stream_parser.add_argument("-d", "--device-index", dest="device_index", type=int, default=None,
+                               help="""Device index to be used as audio input.
+                                       Default is the system's standard audio input.""")
+
     arguments = parser.parse_args()
     return arguments
 
@@ -60,11 +68,13 @@ def info():
     pth = Path.cwd()
     ckpt_pth = pth / "checkpoints"
     if ckpt_pth.is_dir():
-        print(f"Found the following models in {str(pth)}:")
+        print(f"Found the following models in {str(ckpt_pth)}:")
         print(list(_pth.parts[-1] for _pth in ckpt_pth.iterdir()))
     else:
-        print(f"Could not fine any pretrained models in {str(pth)}.")
+        print(f"Could not fine any pretrained models in {str(ckpt_pth)}.")
 
+    rec = AudioRecorder(feature_extractor=lambda _:None)
+    rec.print_input_device_info()
 
 if __name__ == "__main__":
 
@@ -78,16 +88,18 @@ if __name__ == "__main__":
         batch_size = arguments.batch_size
         img_size = (arguments.rows, arguments.cols)
         model_name = arguments.model_name
-        song_files = arguments.data
-
+        song_files = None
         synethesia = Synethesia(song_files=song_files, batch_size=batch_size, img_size=img_size)
         if mode.lower() == "train":
+            song_files = arguments.data
             learning_rate = arguments.learning_rate
             synethesia.train(model_name=model_name, learning_rate=learning_rate)
         elif mode.lower() == "infer":
+            song_files = arguments.data
             target_dir = arguments.target_dir
             synethesia.infer_and_store(model_name=model_name, target_dir=target_dir)
         elif mode.lower() == "stream":
-            synethesia.infer_and_stream(model_name=model_name)
+            device_idx = arguments.device_index
+            synethesia.infer_and_stream(model_name=model_name, input_device_index=device_idx)
         elif mode.lower() == "info":
-            synethesia.info(__path__)
+            info(__path__)

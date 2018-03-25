@@ -52,7 +52,9 @@ class Synethesia(object):
         self.feature_extractor = feature_extractor
 
     def _song_files_to_list(self, song_files):
-        if not isinstance(song_files, (list, tuple)):
+        if song_files is None:
+            contents = []
+        elif not isinstance(song_files, (list, tuple)):
             pth = Path(song_files).resolve()
 
             print(f"Reading songs from {str(pth)}.")
@@ -113,9 +115,9 @@ class Synethesia(object):
         video_creator = VideoCreator()
         video_creator(png_folder=_target_dir, mp3_file=self.song_files[0])
 
-    def infer_and_stream(self, model_name, approx_fps=24, border_color="black"):
+    def infer_and_stream(self, model_name, approx_fps=24, border_color="black", input_device_index=None):
 
-        with AudioRecorder(feature_extractor=self.feature_extractor) as infer_loader:
+        with AudioRecorder(feature_extractor=self.feature_extractor, device_idx=input_device_index) as infer_loader:
             generator = self._infer(model_name=model_name, data_provider=infer_loader)
 
             def yield_single_img():

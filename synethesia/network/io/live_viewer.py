@@ -41,9 +41,9 @@ class LiveViewer(object):
 
 class AudioRecorder(object):
 
-    def __init__(self, feature_extractor, frames_per_buffer=2048):
+    def __init__(self, feature_extractor, device_idx=None, frames_per_buffer=2048):
         self.feature_extractor = feature_extractor
-        self.device_idx = None
+        self.device_idx = device_idx
         self.frames_per_buffer = frames_per_buffer
         self.format = pyaudio.paInt16
         self.channels = None
@@ -55,7 +55,7 @@ class AudioRecorder(object):
 
     def setup_device(self):
         global_info = self.audio_controller.get_host_api_info_by_index(0)
-        self.device_idx = int(global_info.get("defaultInputDevice"))
+        self.device_idx = int(global_info.get("defaultInputDevice")) if self.device_idx is None else self.device_idx
         device_info = self.audio_controller.get_device_info_by_host_api_device_index(0, self.device_idx)
         self.sampling_rate = int(device_info.get("defaultSampleRate"))
         self.channels = int(device_info.get("maxInputChannels"))
@@ -90,8 +90,7 @@ class AudioRecorder(object):
             return
         else:
             for i in range(self.frames_per_buffer):
-                data = self.stream.read(self.frames_per_buffer)
-                count = len(data) / 2
+                data = self.stream.read(self.frames_per_buffer, exception_on_overflow=False)
                 fmt = "<H"
                 data = np.array(list(struct.iter_unpack(fmt, data)))
                 yield self.feature_extractor(data)

@@ -77,7 +77,8 @@ class SynethesiaModel(Model):
             self.reproduced_sound = self._build_decoder(from_img=self.generated_img)
             assert self.reproduced_sound.get_shape()[1:] == self.sound_feature.get_shape()[1:]
 
-            loss = self._build_loss(generated_img=self.generated_img,
+            loss = self._build_loss(real_img=self.base_img,
+                                    generated_img=self.generated_img,
                                     real_sound=self.sound_feature,
                                     generated_sound=self.reproduced_sound)
             self._global_step, self._learning_rate, self._optimizer = self._build_optimizer(loss=loss)
@@ -138,18 +139,21 @@ class SynethesiaModel(Model):
             # No activation because we don't want any value limits
         return y
 
-    def _build_loss(self, generated_img, real_sound, generated_sound,
-                    lambda_reconstruct=1., lambda_color=10., lambda_colorfulness=10., lambda_noise=10.):
+    def _build_loss(self, real_img, generated_img, real_sound, generated_sound,
+                    lambda_reconstruct_sound=1., lambda_reconstruct_image=.5,
+                    lambda_colorfulness=0., lambda_noise=0.):
 
         with tf.variable_scope("loss"):
             sound_reconstruction_loss = self._add_sound_reconstruction_loss(real_sound=real_sound,
                                                                             generated_sound=generated_sound)
-            color_loss = self._add_color_loss(generated_img)
+
+            image_reconstruction_loss = self._add_image_reconstruction_loss(real_img=real_img,
+                                                                            generated_img=generated_img)
             colorfulness_loss = self._add_colorfulness_loss(generated_img)
             noise_loss = self._add_noise_loss(generated_img)
 
-            _total_loss = (lambda_reconstruct * sound_reconstruction_loss +
-                           lambda_color * color_loss +
+            _total_loss = (lambda_reconstruct_sound * sound_reconstruction_loss +
+                           lambda_reconstruct_image * image_reconstruction_loss +
                            lambda_colorfulness * colorfulness_loss +
                            lambda_noise * noise_loss)
             total_loss = tf.identity(_total_loss, name="total_loss")
@@ -157,21 +161,18 @@ class SynethesiaModel(Model):
 
         return total_loss
 
+
+    def _add_image_reconstruction_loss(self, real_img, generated_img):
+        img_reconstruction_loss = tf.losses.mean_squared_error(labels=real_img, predictions=generated_img,
+                                                               scope="image_reconstruction_loss")
+        return img_reconstruction_loss
+
     def _add_sound_reconstruction_loss(self, real_sound, generated_sound):
         sound_reconstruction_loss = tf.losses.mean_squared_error(labels=real_sound, predictions=generated_sound,
                                                                  scope="sound_reconstruction_loss")
         return sound_reconstruction_loss
 
-    def _add_color_loss(self, generated_img):
-        mean_global_color, _ = tf.nn.moments(generated_img, axes=[1, 2], name="global_color", keep_dims=True)
-        _, colorfulness = tf.nn.moments(tf.abs(generated_img - mean_global_color), axes=[-1], name="colorfulness")
-        _color_loss = - tf.reduce_sum(colorfulness)
-        color_loss = _color_loss
-        color_loss = tf.divide(color_loss, tf.cast(tf.size(generated_img), tf.float32), name="color_loss")
-        tf.losses.add_loss(color_loss)
-        return color_loss
-
-    def _add_colorfulness_loss(self, generated_img, num_colors=4):
+    def _add_colorfulness_loss(self, generated_img, num_colors=5):
         binned_values = tf.reshape(tf.floor(generated_img * (num_colors - 1)), [-1])
         binned_values = tf.cast(binned_values, tf.int32)
         ones = tf.ones_like(binned_values, dtype=tf.int32)
@@ -188,11 +189,9 @@ class SynethesiaModel(Model):
         tf.losses.add_loss(noise_loss)
         return noise_loss
 
-    def _build_optimizer(self, loss, decay_rate=1., decay_steps=100000):
+    def _build_optimizer(self, loss, decay_rate=0.95, decay_steps=10000):
         with tf.variable_scope("optimizer"):
-            global_step = tf.get_variable(name="global_step", trainable=False, shape=[],
-                                          initializer=tf.constant_initializer(0),
-                                          dtype=tf.int64)
+            global_step = tf.get_variable("global_step", shape=[], dtype=tf.int64, trainable=False)
             learning_rate = tf.placeholder(dtype=tf.float32, shape=[],
                                            name="learning_rate")
             decayed_learning_rate = tf.train.exponential_decay(learning_rate=learning_rate,

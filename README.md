@@ -95,7 +95,7 @@ is planned. Change which one is used in the constructor of `Synethesia`.
 
 1. Currently, sound features based on logarithmic filterbank energies are used.
 
-2. There is also a feature extractor based on the fast fourier transform directly available.
+2. There is also a feature extractor based on the fast Fourier transform directly available.
 
 3. One feature extraction method that I'd like to try is directly using the wav of a small sample.
 
