@@ -11,9 +11,9 @@ different results achievable using different loss functions.
 
 **Grizmatik - My People**| **Bearded Skull - 420**
 :---:|:---:
-[![/watch?v=9O20t8XsyWM](https://img.youtube.com/vi/9O20t8XsyWM/0.jpg {:height="700px" width="400px"})](https://www.youtube.com/watch?v=9O20t8XsyWM) | [![/watch?v=V_5Mnlj2t9E](https://img.youtube.com/vi/V_5Mnlj2t9E/0.jpg{:height="700px" width="400px"})](https://www.youtube.com/watch?v=V_5Mnlj2t9E)
+[![/watch?v=9O20t8XsyWM](https://img.youtube.com/vi/9O20t8XsyWM/0.jpg)](https://www.youtube.com/watch?v=9O20t8XsyWM) | [![/watch?v=V_5Mnlj2t9E](https://img.youtube.com/vi/V_5Mnlj2t9E/0.jpg)](https://www.youtube.com/watch?v=V_5Mnlj2t9E)
 **Bearded Skull - 420 [Snippet]**| **Bearded Skull - 420 [Snippet 2]**
-[![/watch?v=paLXtZr4P6k](https://img.youtube.com/vi/paLXtZr4P6k/0.jpg {:height="700px" width="400px"})](https://www.youtube.com/watch?v=paLXtZr4P6k)|[![/watch?v=kMR0hgHkgB8](https://img.youtube.com/vi/kMR0hgHkgB8/0.jpg {:height="700px" width="400px"})](https://www.youtube.com/watch?v=kMR0hgHkgB8)
+[![/watch?v=paLXtZr4P6k](https://img.youtube.com/vi/paLXtZr4P6k/0.jpg)](https://www.youtube.com/watch?v=paLXtZr4P6k)|[![/watch?v=kMR0hgHkgB8](https://img.youtube.com/vi/kMR0hgHkgB8/0.jpg)](https://www.youtube.com/watch?v=kMR0hgHkgB8)
 
 
 ## Installation and Setup
