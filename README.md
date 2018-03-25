@@ -1,17 +1,18 @@
 # WIP: SyNEThesia
 
 SyNEThesia is a deep-learning-based music and sound visualizer, and a play of words on [Synesthesia](https://en.wikipedia.org/wiki/Synesthesia), a neurological condition where one perceives a stimulus in multiple ways (for example seeing sound).
+Its main goal is to produce nice visuals, and act as "learned artist".
 
 The current version produces some nice visuals, but can definitely be improved.
 
 ## Examples
 
-Click on the images, they redirect to Youtube! There are 3 samples from the same song to illustrate the
+Click on the images, they redirect to Youtube! There are multiple samples from the same song to illustrate the
 different results achievable using different loss functions.
 
-**Grizmatik - My People**| **Bearded Skull - 420**
+**Grizmatik - My People**| **Gorillaz - Feel Good Inc.**
 :---:|:---:
-[![/watch?v=9O20t8XsyWM](https://img.youtube.com/vi/9O20t8XsyWM/0.jpg)](https://www.youtube.com/watch?v=9O20t8XsyWM) | [![/watch?v=V_5Mnlj2t9E](https://img.youtube.com/vi/V_5Mnlj2t9E/0.jpg)](https://www.youtube.com/watch?v=V_5Mnlj2t9E)
+[![/watch?v=9O20t8XsyWM](https://img.youtube.com/vi/9O20t8XsyWM/0.jpg)](https://www.youtube.com/watch?v=9O20t8XsyWM) | [![/watch?v=VdJmd9KLjgE](https://img.youtube.com/vi/VdJmd9KLjgE/0.jpg)](https://www.youtube.com/watch?v=VdJmd9KLjgE)
 **Bearded Skull - 420 [Snippet]**| **Bearded Skull - 420 [Snippet 2]**
 [![/watch?v=paLXtZr4P6k](https://img.youtube.com/vi/paLXtZr4P6k/0.jpg)](https://www.youtube.com/watch?v=paLXtZr4P6k)|[![/watch?v=kMR0hgHkgB8](https://img.youtube.com/vi/kMR0hgHkgB8/0.jpg)](https://www.youtube.com/watch?v=kMR0hgHkgB8)
 
