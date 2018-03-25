@@ -8,18 +8,21 @@ The current version produces some nice visuals, but can definitely be improved.
 
 Click on the images, they redirect to Youtube! There are 3 samples from the same song to illustrate the
 different results achievable using different loss functions.
-
+<br/><br/>
 **Grizmatik - My People**
+<br/><br/>
 [![/watch?v=9O20t8XsyWM](https://img.youtube.com/vi/9O20t8XsyWM/0.jpg)](https://www.youtube.com/watch?v=9O20t8XsyWM)
-
+<br/><br/>
 **Bearded Skull - 420**
+<br/><br/>
 [![/watch?v=V_5Mnlj2t9E](https://img.youtube.com/vi/V_5Mnlj2t9E/0.jpg)](https://www.youtube.com/watch?v=V_5Mnlj2t9E)
-
+<br/><br/>
 **Bearded Skull - 420 [Snippet]**
-This is probably the best one so far!
+<br/><br/>
 [![/watch?v=paLXtZr4P6k](https://img.youtube.com/vi/paLXtZr4P6k/0.jpg)](https://www.youtube.com/watch?v=paLXtZr4P6k)
-
+<br/><br/>
 **Bearded Skull - 420 [Snippet 2]**
+<br/><br/>
 [![/watch?v=kMR0hgHkgB8](https://img.youtube.com/vi/kMR0hgHkgB8/0.jpg)](https://www.youtube.com/watch?v=kMR0hgHkgB8)
 
 
