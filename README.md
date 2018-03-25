@@ -45,6 +45,7 @@ You may have to install two dependencies:
        sudo apt install ffmpeg youtube-dl
 
 2. `run_synethesia.py`: This is the main file to start. There are 4 modes with which you can call the program:
+
   1. train: Trains the network
   2. infer: Infers a song and creates a music video from the resulting images
   3. stream: Infers the input of your microphone live. This opens a new window, quit it with "Esc" or kill it with "q".
