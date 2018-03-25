@@ -46,10 +46,10 @@ You may have to install two dependencies:
 
 2. `run_synethesia.py`: This is the main file to start. There are 4 modes with which you can call the program:
 
-  1. train: Trains the network
-  2. infer: Infers a song and creates a music video from the resulting images
-  3. stream: Infers the input of your microphone live. This opens a new window, quit it with "Esc" or kill it with "q".
-  4. info: Displays available pretrained model names (just checks the `./checkpoints` folder) and sound input devices.
+    1. train: Trains the network
+    2. infer: Infers a song and creates a music video from the resulting images
+    3. stream: Infers the input of your microphone live. This opens a new window, quit it with "Esc" or kill it with "q".
+    4. info: Displays available pretrained model names (just checks the `./checkpoints` folder) and sound input devices.
 
   You can get further information by running `run_synethesia.py -h` and `run_synethesia {mode} -h`.
 
