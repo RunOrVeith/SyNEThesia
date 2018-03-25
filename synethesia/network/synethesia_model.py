@@ -162,9 +162,11 @@ class SynethesiaModel(Model):
         return total_loss
 
 
-    def _add_image_reconstruction_loss(self, real_img, generated_img):
-        img_reconstruction_loss = tf.losses.mean_squared_error(labels=real_img, predictions=generated_img,
-                                                               scope="image_reconstruction_loss")
+    def _add_image_reconstruction_loss(self, real_img, generated_img, allowed_error=0.2):
+        img_reconstruction_loss = tf.losses.mean_squared_error(labels=real_img, predictions=generated_img)
+
+        img_reconstruction_loss = tf.nn.relu(features=img_reconstruction_loss - allowed_error,
+                                             name="image_reconstruction_loss")
         return img_reconstruction_loss
 
     def _add_sound_reconstruction_loss(self, real_sound, generated_sound):

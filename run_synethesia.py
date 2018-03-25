@@ -44,10 +44,7 @@ def parse_args():
                                       exponentially decayed over time.
                                       Defaults to %(default)s.""")
 
-    store_parser.add_argument("target_dir", type=str,
-                              help="""Target directory for storing the resulting video.
-                                      Warning: There may be many frames stored here intermediately,
-                                      so make sure you have enough disc space.""")
+
 
     train_parser.add_argument("data", type=str,
                               help="""Either a file containing paths to .mp3's, or a folder containing .mp3's,
@@ -55,7 +52,10 @@ def parse_args():
     store_parser.add_argument("data", type=str,
                               help="""Either a file containing paths to .mp3's, or a folder containing .mp3's,
                                       or a single .mp3""")
-
+    store_parser.add_argument("target_dir", type=str,
+                              help="""Target directory for storing the resulting video.
+                                      Warning: There may be many frames stored here intermediately,
+                                      so make sure you have enough disc space.""")
     stream_parser.add_argument("-d", "--device-index", dest="device_index", type=int, default=None,
                                help="""Device index to be used as audio input.
                                        Default is the system's standard audio input.""")
@@ -88,10 +88,9 @@ if __name__ == "__main__":
         batch_size = arguments.batch_size
         img_size = (arguments.rows, arguments.cols)
         model_name = arguments.model_name
-        song_files = None
+        song_files = arguments.data if hasattr(arguments, "data") else None
         synethesia = Synethesia(song_files=song_files, batch_size=batch_size, img_size=img_size)
         if mode.lower() == "train":
-            song_files = arguments.data
             learning_rate = arguments.learning_rate
             synethesia.train(model_name=model_name, learning_rate=learning_rate)
         elif mode.lower() == "infer":

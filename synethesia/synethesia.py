@@ -11,7 +11,7 @@ def random_start_img(img_size, batch_size, num_channels=3, num_ones_offset=None)
     zeros = np.zeros((*img_size, batch_size * num_channels))
     num_ones_offset = np.random.choice([1, 0], size=batch_size * num_channels)
     zeros += num_ones_offset * np.random.random(size=batch_size * num_channels)
-    img = zeros.reshape((batch_size, *img_size, num_channels))
+    img = np.transpose(zeros.reshape((*img_size, batch_size, num_channels)), axes=[2, 0, 1, 3])
     return img
 
 
