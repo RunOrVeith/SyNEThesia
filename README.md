@@ -2,8 +2,28 @@
 
 SyNEThesia is a deep-learning-based music and sound visualizer, and a play of words on [Synesthesia](https://en.wikipedia.org/wiki/Synesthesia), a neurological condition where one perceives a stimulus in multiple ways (for example seeing sound).
 
-The current version is already looking nice, but there are many ideas still in progress.
+The current version produces some nice visuals, but can definitely be improved.
 
+## Examples
+
+Click on the images, they redirect to Youtube! There are 3 samples from the same song to illustrate the
+different results achievable using different loss functions.
+
+**Grizmatik - My People**
+
+[![/watch?v=9O20t8XsyWM](https://img.youtube.com/vi/9O20t8XsyWM/0.jpg)](https://www.youtube.com/watch?v=9O20t8XsyWM)
+
+**Bearded Skull - 420**
+[![/watch?v=V_5Mnlj2t9E](https://img.youtube.com/vi/V_5Mnlj2t9E/0.jpg)](https://www.youtube.com/watch?v=V_5Mnlj2t9E)
+
+**Bearded Skull - 420 [Snippet]**
+This is probably the best one so far!
+[![/watch?v=paLXtZr4P6k](https://img.youtube.com/vi/paLXtZr4P6k/0.jpg)](https://www.youtube.com/watch?v=paLXtZr4P6k)
+
+
+**Bearded Skull - 420 [Snippet 2]**
+
+[![/watch?v=kMR0hgHkgB8](https://img.youtube.com/vi/kMR0hgHkgB8/0.jpg)](https://www.youtube.com/watch?v=kMR0hgHkgB8)
 
 
 ## Installation and Setup
@@ -37,8 +57,8 @@ You may have to install two dependencies:
 2. `run_synethesia.py`: This is the main file to start. There are 4 modes with which you can call the program:
   1. train: Trains the network
   2. infer: Infers a song and creates a music video from the resulting images
-  3. stream: Infers the input of your standard microphone live. This opens a new window, quit it with "Esc" or kill it with "q".
-  4. info: Displays available pretrained model names (just checks the `./checkpoints` folder).
+  3. stream: Infers the input of your microphone live. This opens a new window, quit it with "Esc" or kill it with "q".
+  4. info: Displays available pretrained model names (just checks the `./checkpoints` folder) and sound input devices.
 
   You can get further information by running `run_synethesia.py -h` and `run_synethesia {mode} -h`.
 
