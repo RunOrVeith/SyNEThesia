@@ -16,7 +16,7 @@ def parse_args():
 
     train_parser = subparsers.add_parser("train", help="Train the model.")
     store_parser = subparsers.add_parser("infer", help="Infer songs or other sounds and store the frames in a folder.")
-    stream_parser = subparsers.add_parser("stream", help="""Infer songs or other sounds and visualize the frames live.
+    stream_parser = subparsers.add_parser("stream", help="""Infer input from your standard microphone live.
                                                             Opens a window in full screen mode.
                                                             Close it by pressing 'q', or minimize it with 'Esc'.""")
     info_parser = subparsers.add_parser("info", help="Display additional information, such as available models.")

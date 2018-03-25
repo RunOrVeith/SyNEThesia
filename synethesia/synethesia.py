@@ -2,13 +2,16 @@ import numpy as np
 from pathlib import Path
 from PIL import Image
 
-from synethesia.network import SynethesiaModel, logfbank_features, StaticSongLoader, LiveViewer, VideoCreator
+from synethesia.network import (SynethesiaModel, logfbank_features, fft_features, StaticSongLoader,
+                                LiveViewer, VideoCreator, AudioRecorder)
 from synethesia.framework import TrainingSession, InferenceSession, Trainable, Inferable
 
 
-def random_start_img(img_size, batch_size):
-    generation_shape = (batch_size, *img_size, 3)
-    img = np.random.uniform(size=generation_shape)
+def random_start_img(img_size, batch_size, num_channels=3, num_ones_offset=None):
+    zeros = np.zeros((*img_size, batch_size * num_channels))
+    num_ones_offset = np.random.choice([1, 0], size=batch_size * num_channels)
+    zeros += num_ones_offset * np.random.random(size=batch_size * num_channels)
+    img = zeros.reshape((batch_size, *img_size, num_channels))
     return img
 
 
@@ -40,14 +43,13 @@ class SynethesiaInferer(Inferable):
         return feed_dict
 
 
-
 class Synethesia(object):
 
-    def __init__(self, song_files, img_size=(256, 128), batch_size=32):
+    def __init__(self, song_files, img_size=(256, 128), batch_size=32, feature_extractor=logfbank_features):
         self.img_size = img_size
         self.batch_size = batch_size
         self.song_files = self._song_files_to_list(song_files=song_files)
-        self.feature_extractor = logfbank_features
+        self.feature_extractor = feature_extractor
 
     def _song_files_to_list(self, song_files):
         if not isinstance(song_files, (list, tuple)):
@@ -112,19 +114,16 @@ class Synethesia(object):
         video_creator(png_folder=_target_dir, mp3_file=self.song_files[0])
 
     def infer_and_stream(self, model_name, approx_fps=24, border_color="black"):
-        # TODO enable multi song inference
-        infer_loader = StaticSongLoader(song_files=(self.song_files[0],), feature_extractor=self.feature_extractor,
-                                        batch_size=1, load_n_songs_at_once=1,
-                                        to_infinity=False, allow_shuffle=False)
 
-        generator = self._infer(model_name=model_name, data_provider=infer_loader)
+        with AudioRecorder(feature_extractor=self.feature_extractor) as infer_loader:
+            generator = self._infer(model_name=model_name, data_provider=infer_loader)
 
-        def yield_single_img():
-            for imgs, sounds in generator:
-                for img in imgs:
-                    yield img
+            def yield_single_img():
+                for imgs, sounds in generator:
+                    for img in imgs:
+                        yield img
 
-        print("Starting streaming inference...")
-        viewer = LiveViewer(approx_fps=approx_fps, border_color=border_color)
-        viewer.toggle_fullscreen()
-        viewer.display(image_generator=yield_single_img)
+            print("Starting streaming inference...")
+            viewer = LiveViewer(approx_fps=approx_fps, border_color=border_color)
+            viewer.toggle_fullscreen()
+            viewer.display(image_generator=yield_single_img)

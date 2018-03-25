@@ -26,20 +26,26 @@ def fft_features(signal, fps, **kwargs):
     return sound_dB
 
 
-def logfbank_features(signal, samplerate, fps, num_filt=40, num_cepstra=40, **kwargs):
+def logfbank_features(signal, samplerate=44100, fps=24, num_filt=40, num_cepstra=40, nfft=8192, **kwargs):
     winstep = 2 / fps
     winlen = winstep * 2
     feat, energy = psf.fbank(signal=signal, samplerate=samplerate,
-                             winlen=winlen, winstep=winstep, nfilt=num_filt)
+                             winlen=winlen, winstep=winstep, nfilt=num_filt,
+                             nfft=nfft)
     feat = np.log(feat)
     feat = psf.dct(feat, type=2, axis=1, norm='ortho')[:, :num_cepstra]
-    feat = psf.lifter(feat,L=22)
+    feat = psf.lifter(feat, L=22)
     feat = np.asarray(feat)
 
     energy = np.log(energy)
     energy = energy.reshape([energy.shape[0],1])
 
-    mat = (feat - np.mean(feat, axis=0)) / (0.5 * np.std(feat, axis=0))
+    if feat.shape[0] > 1:
+        std = 0.5 * np.std(feat, axis=0)
+        mat = (feat - np.mean(feat, axis=0)) / std
+    else:
+        mat = feat
+
     mat = np.concatenate((mat, energy), axis=1)
 
     duration = signal.shape[0] / samplerate

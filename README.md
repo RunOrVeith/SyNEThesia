@@ -34,7 +34,13 @@ You may have to install two dependencies:
 
        sudo apt install ffmpeg youtube-dl
 
-2. `run_synethesia.py`: This is the main file to start. Read the bottom of this README to see a description of the CLI. You can also get this information by running `run_synethesia.py -h` and `run_synethesia {mode} -h`.
+2. `run_synethesia.py`: This is the main file to start. There are 4 modes with which you can call the program:
+  1. train: Trains the network
+  2. infer: Infers a song and creates a music video from the resulting images
+  3. stream: Infers the input of your standard microphone live. This opens a new window, quit it with "Esc" or kill it with "q".
+  4. info: Displays available pretrained model names (just checks the `./checkpoints` folder).
+
+  You can get further information by running `run_synethesia.py -h` and `run_synethesia {mode} -h`.
 
 
 ## General Information
@@ -54,7 +60,44 @@ Comming soon
 
 ### Losses
 
-Comming soon
+There are a bunch of loss functions that are implemented and that were tested.
+They are all defined in the bottom part of `network/synethesia_model.py`.
+There is currently no easy way to configure them, but you can experiment with them by setting their
+lambdas (i.e. constant factor to scale their contribution to the total loss) to something other than 0
+in the `_build_loss` function.
+
+The following losses are there:
+
+1. Sound reconstruction loss (`_add_sound_reconstruction_loss`):
+   Mean squared error loss for the input sound feature and the sound reproduced from the generated image.
+
+2. Image reconstruction loss (`_add_image_reconstruction_loss`):
+   Mean squared error loss for the produced image and the input image
+   (at the moment only random images are used at input).
+
+3. Noise loss (`_add_noise_loss`):
+   Custom loss that penalizes difference in adjacent pixels. Using this loss during training
+   produces sharper edges and more distinct colors.
+   Personally, I think images look better without it.
+
+4. Colorfulness loss (`_add_colorfulness_loss`):
+   Custom loss that computes a histogram over a batch and penalizes the maximum number of entries in a bin.
+   Thought to enforce use multiple colors, it seems to work OK for small number of bins (like 3 or 4)
+
+5. Color variance loss:
+   I removed this loss because it did not work.
+   It penalized a low variance in each channel of RGB.
+
+### Feature extraction methods
+
+There are many options to extract sound features. There are 2 implemented and a third
+is planned. Change which one is used in the constructor of `Synethesia`.
+
+1. Currently, sound features based on logarithmic filterbank energies are used.
+
+2. There is also a feature extractor based on the fast fourier transform directly available.
+
+3. One feature extraction method that I'd like to try is directly using the wav of a small sample.
 
 ## ToDo and Ideas
 
@@ -72,113 +115,14 @@ Comming soon
 - [ ] Decay crop size during training
 - [ ] Speed up training
 - [ ] Implement all ToDo's in the code
-- [ ] Hook a microphone to inference
-- [ ] Enforce base image similarity
-- [ ] `Infer` mode should delete the images and create the music video itself
 - [ ] Write Docstrings
 - [ ] Write unit tests
 - [ ] The youtube video extractor should assign path-friendly folder and file names
-- [ ] port shell scripts to python
+- [ ] port shell script for youtube download to python
+- [ ] CLI flag for **everything**
 
 ### Fixed/Implemented
 - [x] Investigate large file amount: Wrong window length in fbank feature
-
-
-## CLI Description
-
-First, you need to supply a mode:
-
-        positional arguments:
-        {train,infer,stream,info}
-                            Choose a mode of operation.
-        train               Train the model.
-        infer               Infer songs or other sounds and store the frames in a
-                            folder.
-        stream              Infer songs or other sounds and visualize the frames
-                            live. Opens a window in full screen mode. Close it by
-                            pressing 'q', or minimize it with 'Esc'.
-        info                Display additional information, such as available
-                            models.
-
-        optional arguments:
-        -h, --help            show this help message and exit
-
-  Each mode has additional parameters:
-
-  - train
-
-          positional arguments:
-          model_name            Name of the model to be trained or used for inference.
-                                If it exists in the local checkpoints folder, the
-                                model will be loaded, otherwise it will be newly
-                                created.
-          data                  Either a file containing paths to .mp3's, or a folder
-                                containing .mp3's, or a single .mp3
-
-          optional arguments:
-          -h, --help            show this help message and exit
-          -b BATCH_SIZE, --batch-size BATCH_SIZE
-                                Batch size. Default is 1. Ignored for streaming
-                                inference.
-          -r ROWS, --n-rows ROWS
-                                Image rows (height). Should be a power of two. An
-                                error will be thrown if the loaded model was not
-                                trained on the same size. Defaults to 256.
-          -c COLS, --n-cols COLS
-                                Image columns (width). Should be a power of two. An
-                                error will be thrown if the loaded model was not
-                                trained on the same size. Defaults to 128.
-          -l LEARNING_RATE, --learning-rate LEARNING_RATE
-                                Learning rate for training. Will be exponentially
-                                decayed over time. Defaults to 0.0001.
-
-  - infer
-
-            positional arguments:
-            model_name            Name of the model to be trained or used for inference.
-                                  If it exists in the local checkpoints folder, the
-                                  model will be loaded, otherwise it will be newly
-                                  created.
-            data                  Either a file containing paths to .mp3's, or a folder
-                                  containing .mp3's, or a single .mp3
-            target_dir            Target directory for storing the resulting frames.
-                                  Warning: There may be many frames stored here intermediately,
-                                           so make sure you have enough disc space.
-
-            optional arguments:
-            -h, --help            show this help message and exit
-            -b BATCH_SIZE, --batch-size BATCH_SIZE
-                                  Batch size. Default is 1. Ignored for streaming
-                                  inference.
-            -r ROWS, --n-rows ROWS
-                                  Image rows (height). Should be a power of two. An
-                                  error will be thrown if the loaded model was not
-                                  trained on the same size. Defaults to 256.
-            -c COLS, --n-cols COLS
-                                  Image columns (width). Should be a power of two. An
-                                  error will be thrown if the loaded model was not
-                                  trained on the same size. Defaults to 128.
-
-  - stream         
-
-              positional arguments:
-              model_name            Name of the model to be trained or used for inference.
-                                    If it exists in the local checkpoints folder, the
-                                    model will be loaded, otherwise it will be newly
-                                    created.
-              data                  Either a file containing paths to .mp3's, or a folder
-                                    containing .mp3's, or a single .mp3
-
-              optional arguments:
-              -h, --help            show this help message and exit
-              -b BATCH_SIZE, --batch-size BATCH_SIZE
-                                    Batch size. Default is 1. Ignored for streaming
-                                    inference.
-              -r ROWS, --n-rows ROWS
-                                    Image rows (height). Should be a power of two. An
-                                    error will be thrown if the loaded model was not
-                                    trained on the same size. Defaults to 256.
-              -c COLS, --n-cols COLS
-                                    Image columns (width). Should be a power of two. An
-                                    error will be thrown if the loaded model was not
-                                    trained on the same size. Defaults to 128.
+- [x] `Infer` mode should delete the images and create the music video itself
+- [x] Hook a microphone to live inference
+- [x] Enforce base image similarity
