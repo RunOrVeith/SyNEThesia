@@ -3,12 +3,14 @@
 SyNEThesia is a deep-learning-based music and sound visualizer, and a play of words on [Synesthesia](https://en.wikipedia.org/wiki/Synesthesia), a neurological condition where one perceives a stimulus in multiple ways (for example seeing sound).
 Its main goal is to produce nice visuals, and act as "learned artist".
 
-The current version produces some nice visuals, but can definitely be improved.
+The current version produces nice samples most of the time.
 
 ## Examples
 
 Click on the images, they redirect to Youtube! There are multiple samples from the same song to illustrate the
 different results achievable using different loss functions.
+More samples are available in a [playlist](https://www.youtube.com/playlist?list=PLYtGPepvlE7fnOHeHP7bkjPdXNW2cjzJL).
+
 
 **Grizmatik - My People**| **Gorillaz - Feel Good Inc.**
 :---:|:---:
