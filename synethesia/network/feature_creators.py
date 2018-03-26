@@ -9,6 +9,8 @@ def _next_power_of_two(number):
 
 
 def _split_into_chunks(signal, chunks_per_second=24):
+    # TODO currently broken
+    raise NotImplemented("Splitting to chunks is currently broken.")
     window_length_ms = 1/chunks_per_second * 1000
     intervals = np.arange(window_length_ms, signal.shape[0], window_length_ms, dtype=np.int32)
     chunks = np.array_split(signal, intervals, axis=0)
