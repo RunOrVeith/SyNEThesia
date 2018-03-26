@@ -21,7 +21,6 @@ class SessionHandler(object):
 
         self.model = model
 
-        self._graph = None
         self._session = None
         self._saver = None
         self._running_model = None
@@ -34,16 +33,11 @@ class SessionHandler(object):
 
         def _assert_initialization(self, *args, **kwargs):
             if (self._session is None or self._saver is None
-            or self._summary_writer is None or self._graph is None):
+            or self._summary_writer is None):
                raise AttributeError("Can not use SessionHandler without active context manager.")
             return func(self, *args, **kwargs)
 
         return _assert_initialization
-
-    @property
-    @_raise_on_uninitialized
-    def graph(self):
-        return self._graph
 
     @property
     @_raise_on_uninitialized
@@ -82,12 +76,10 @@ class SessionHandler(object):
         return str(Path(self._logdir) / self.model_name)
 
     def __enter__(self):
-        self._graph = tf.Graph()
-        self._graph.as_default().__enter__()
         self.model.initialize()
         # TODO allow a debug session instead
         session = tf.Session().__enter__()
-        summary_writer = tf.summary.FileWriter(self.log_dir, graph=self._graph)
+        summary_writer = tf.summary.FileWriter(self.log_dir)
         saver = tf.train.Saver(max_to_keep=self.max_saves_to_keep)
         self._session = session
         self._saver = saver
@@ -96,9 +88,6 @@ class SessionHandler(object):
 
     def __exit__(self, *args, **kwargs):
         self._session.__exit__(*args, **kwargs)
-        # self._graph.as_default().__exit__(*args, **kwargs)
-        # TODO find why this raises a Runtime exception, maybe need to get context manager of graph from
-        # session before closing it?
 
     def training_step(self, feed_dict, additional_ops=()):
         ops_to_run = [self.model.training_summary, self.model.optimizer]
