@@ -98,7 +98,13 @@ The following losses are there:
    Custom loss that computes a histogram over a batch and penalizes the maximum number of entries in a bin.
    Thought to enforce use multiple colors, it seems to work OK for small number of bins (like 3 or 4)
 
-5. Color variance loss:
+5. Consecutive change loss (`_add_consecutive_change_loss`):
+   Custom loss that keeps the previously computed batch of generated images persistent over a session call
+   and rewards the difference between the batches.
+   _The way this is implemented is currently a bit hacky and it only works with batch size 32 due to a
+   magic number. This will be implemented properly soon._
+
+6. Color variance loss:
    I removed this loss because it did not work.
    It penalized a low variance in each channel of RGB.
 
