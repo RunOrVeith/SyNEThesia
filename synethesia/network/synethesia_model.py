@@ -64,23 +64,29 @@ class SynethesiaModel(Model):
         return tensorized
 
     def _load_base_image(self):
-        return tf.placeholder(dtype=tf.float32, shape=[None, *self.img_size, 3])
+        return tf.placeholder(dtype=tf.float32, shape=[None, *self.img_size, 3], name="base_img_ph")
 
     def _build_model(self):
-        # TODO dont ignore base image
         # TODO compare difference to previous slice
         with tf.variable_scope("synethesia"):
             self.sound_feature = tf.placeholder(dtype=tf.float32, shape=[None, self.feature_dim],
                                            name="feature_input")
+
             img_and_sound, self.base_img = self._img_from_sound(sound_feature=self.sound_feature)
             self.generated_img = self._build_encoder(x=img_and_sound)
+
+            self.gen_handle = tf.get_session_handle(self.generated_img)
+            self.previous_img = tf.placeholder(dtype=tf.float32, shape=[None, *self.img_size, 3],
+                                               name="previous_img")
+
             self.reproduced_sound = self._build_decoder(from_img=self.generated_img)
             assert self.reproduced_sound.get_shape()[1:] == self.sound_feature.get_shape()[1:]
 
             loss = self._build_loss(real_img=self.base_img,
                                     generated_img=self.generated_img,
                                     real_sound=self.sound_feature,
-                                    generated_sound=self.reproduced_sound)
+                                    generated_sound=self.reproduced_sound,
+                                    previous_img=self.previous_img)
             self._global_step, self._learning_rate, self._optimizer = self._build_optimizer(loss=loss)
 
             self._summary_op = self._build_summary()
@@ -123,7 +129,7 @@ class SynethesiaModel(Model):
     def _build_decoder(self, from_img):
 
         with tf.variable_scope("decoder"):
-            crop_percentage = 0.9
+            crop_percentage = 1.0
             batch_size = tf.shape(from_img)[0]
             crop_size = [batch_size, int(self.img_size[0] * crop_percentage),
                          int(self.img_size[1] * crop_percentage), 3]
@@ -139,34 +145,46 @@ class SynethesiaModel(Model):
             # No activation because we don't want any value limits
         return y
 
-    def _build_loss(self, real_img, generated_img, real_sound, generated_sound,
-                    lambda_reconstruct_sound=1., lambda_reconstruct_image=.5,
-                    lambda_colorfulness=0., lambda_noise=0.):
+    def _build_loss(self, real_img, generated_img, real_sound, generated_sound, previous_img,
+                    lambda_reconstruct_sound=1., lambda_reconstruct_image=1.,
+                    lambda_colorfulness=1., lambda_noise=1., lambda_change=10.):
 
         with tf.variable_scope("loss"):
-            sound_reconstruction_loss = self._add_sound_reconstruction_loss(real_sound=real_sound,
-                                                                            generated_sound=generated_sound)
+            sound_reconstruction_loss = (lambda_reconstruct_sound *
+                                         self._add_sound_reconstruction_loss(real_sound=real_sound,
+                                                                             generated_sound=generated_sound))
 
-            image_reconstruction_loss = self._add_image_reconstruction_loss(real_img=real_img,
-                                                                            generated_img=generated_img)
-            colorfulness_loss = self._add_colorfulness_loss(generated_img)
-            noise_loss = self._add_noise_loss(generated_img)
+            image_reconstruction_loss = (lambda_reconstruct_image *
+                                         self._add_image_reconstruction_loss(real_img=real_img,
+                                                                             generated_img=generated_img))
 
-            _total_loss = (lambda_reconstruct_sound * sound_reconstruction_loss +
-                           lambda_reconstruct_image * image_reconstruction_loss +
-                           lambda_colorfulness * colorfulness_loss +
-                           lambda_noise * noise_loss)
+            change_loss = lambda_change * self._add_consecutive_change_loss(generated_img=generated_img,
+                                                                            last_generated_img=previous_img)
+            colorfulness_loss = lambda_colorfulness * self._add_colorfulness_loss(generated_img)
+            noise_loss = lambda_noise * self._add_noise_loss(generated_img)
+
+            _total_loss = (sound_reconstruction_loss +
+                           image_reconstruction_loss +
+                           colorfulness_loss +
+                           noise_loss)
             total_loss = tf.identity(_total_loss, name="total_loss")
             tf.losses.add_loss(total_loss)
 
         return total_loss
 
+    def _add_consecutive_change_loss(self, generated_img, last_generated_img):
+        _change_loss = tf.reduce_mean(tf.squared_difference(generated_img, last_generated_img))
+        change_loss = tf.identity(- _change_loss, name="consecutive_change_loss")
+        tf.losses.add_loss(change_loss)
+        return change_loss
 
-    def _add_image_reconstruction_loss(self, real_img, generated_img, allowed_error=0.2):
-        img_reconstruction_loss = tf.losses.mean_squared_error(labels=real_img, predictions=generated_img)
+    def _add_image_reconstruction_loss(self, real_img, generated_img, allowed_error=0.05):
+        img_reconstruction_loss = tf.losses.mean_squared_error(labels=real_img, predictions=generated_img,
+                                                               loss_collection=None)
 
         img_reconstruction_loss = tf.nn.relu(features=img_reconstruction_loss - allowed_error,
                                              name="image_reconstruction_loss")
+        tf.losses.add_loss(img_reconstruction_loss)
         return img_reconstruction_loss
 
     def _add_sound_reconstruction_loss(self, real_sound, generated_sound):

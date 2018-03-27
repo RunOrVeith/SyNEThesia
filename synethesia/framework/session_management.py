@@ -97,7 +97,7 @@ class SessionHandler(object):
         step = self.step
         self.summary_writer.add_summary(summary, step)
 
-        return (step, results[2:]) if additional_ops else (step, None)
+        return (step, *results[2:]) if additional_ops else (step, None)
 
     def inference_step(self, feed_dict, additional_ops=()):
         ops_to_run = [self.model.data_output]
