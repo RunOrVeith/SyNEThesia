@@ -129,9 +129,7 @@ is planned. Change which one is used in the constructor of `Synethesia`.
 - [ ] Implement a discriminatory net that assesses aesthetic appeal
 - [ ] Implement concurrent audio play and inference (streaming mode with audio)
 - [ ] Inference only goes through one song at the moment, not multiple
-- [ ] Unroll in time to compare current with previous frame
 - [ ] Predict the wav directly, this allows to listen to images
-- [ ] Enforce more colors
 - [ ] Decay crop size during training
 - [ ] Speed up training
 - [ ] Implement all ToDo's in the code
@@ -146,3 +144,5 @@ is planned. Change which one is used in the constructor of `Synethesia`.
 - [x] `Infer` mode should delete the images and create the music video itself
 - [x] Hook a microphone to live inference
 - [x] Enforce base image similarity
+- [x] Enforce more colors
+- [x] (**Hacky**) Unroll in time to compare current with previous frame
