@@ -75,10 +75,10 @@ class Synethesia(object):
         print(f"Received {len(contents)} sound files.")
         return contents
 
-    def train(self, model_name, learning_rate=0.0001, songs_at_once=3):
+    def train(self, model_name, learning_rate=0.0001, songs_at_once=3, shuffle_input=True):
         train_loader = StaticSongLoader(song_files=self.song_files, feature_extractor=self.feature_extractor,
                                         batch_size=self.batch_size, load_n_songs_at_once=songs_at_once,
-                                        to_infinity=True, allow_shuffle=True)
+                                        to_infinity=True, allow_shuffle=shuffle_input)
         model = SynethesiaModel(feature_dim=train_loader.feature_dim, img_size=self.img_size)
         train_session = TrainingSession(model=model,
                                         learning_rate=learning_rate,

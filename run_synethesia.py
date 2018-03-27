@@ -32,18 +32,19 @@ def parse_args():
 
         _parser.add_argument("-r", "--n-rows", default=256, type=int, dest="rows",
                              help="""Image rows (height). Should be a power of two.
-                                     An error will be thrown if the loaded model was not trained on the same size.
                                      Defaults to %(default)s.""")
         _parser.add_argument("-c", "--n-cols", default=128, type=int, dest="cols",
                              help="""Image columns (width). Should be a power of two.
-                                     An error will be thrown if the loaded model was not trained on the same size.
                                      Defaults to %(default)s.""")
 
     train_parser.add_argument("-l", "--learning-rate", default=0.0001, type=float, dest="learning_rate",
                               help="""Learning rate for training. Will be
                                       exponentially decayed over time.
                                       Defaults to %(default)s.""")
-
+    train_parser.add_argument("-ns", "--no-shuffle-input", dest="allow_shuffle", action="store_false",
+                              help="""Learning rate for training. Will be
+                                      exponentially decayed over time.
+                                      Defaults to %(default)s.""")
 
 
     train_parser.add_argument("data", type=str,
@@ -92,7 +93,8 @@ if __name__ == "__main__":
         synethesia = Synethesia(song_files=song_files, batch_size=batch_size, img_size=img_size)
         if mode.lower() == "train":
             learning_rate = arguments.learning_rate
-            synethesia.train(model_name=model_name, learning_rate=learning_rate)
+            shuffle = arguments.allow_shuffle
+            synethesia.train(model_name=model_name, learning_rate=learning_rate, shuffle_input=shuffle)
         elif mode.lower() == "infer":
             song_files = arguments.data
             target_dir = arguments.target_dir
