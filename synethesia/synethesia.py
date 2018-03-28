@@ -4,7 +4,7 @@ from PIL import Image
 
 from synethesia.network import (SynethesiaModel, logfbank_features, fft_features, StaticSongLoader,
                                 LiveViewer, VideoCreator, AudioRecorder)
-from synethesia.framework import TrainingSession, InferenceSession, Trainable, Inferable
+from synethesia.network import TrainingSession, InferenceSession, Trainable, Inferable
 
 
 def random_start_img(img_size, batch_size, num_channels=3, num_ones_offset=None):
@@ -75,11 +75,13 @@ class Synethesia(object):
         print(f"Received {len(contents)} sound files.")
         return contents
 
-    def train(self, model_name, learning_rate=0.0001, songs_at_once=3, shuffle_input=True):
+    def train(self, model_name, learning_rate=0.0001, songs_at_once=3, shuffle_input=True, **kwargs):
         train_loader = StaticSongLoader(song_files=self.song_files, feature_extractor=self.feature_extractor,
                                         batch_size=self.batch_size, load_n_songs_at_once=songs_at_once,
                                         to_infinity=True, allow_shuffle=shuffle_input)
-        model = SynethesiaModel(feature_dim=train_loader.feature_dim, img_size=self.img_size)
+        model = SynethesiaModel(feature_dim=train_loader.feature_dim, img_size=self.img_size,
+                                **kwargs)
+        print(f"Training with the following parameters: {kwargs}")
         train_session = TrainingSession(model=model,
                                         learning_rate=learning_rate,
                                         trainable=SynethesiaTrainer(img_size=self.img_size, model=model))
@@ -88,7 +90,8 @@ class Synethesia(object):
 
     def _infer(self, model_name, data_provider):
         model = SynethesiaModel(feature_dim=data_provider.feature_dim, img_size=self.img_size)
-        inference_session = InferenceSession(model=model, inferable=SynethesiaInferer(img_size=self.img_size, model=model))
+        inference_session = InferenceSession(model=model, inferable=SynethesiaInferer(img_size=self.img_size,
+                                                                                      model=model))
         yield from inference_session.infer(model_name=model_name, data_provider=data_provider)
 
     def infer_and_store(self, model_name, target_dir="/tmp"):

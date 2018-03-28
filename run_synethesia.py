@@ -37,6 +37,9 @@ def parse_args():
                              help="""Image columns (width). Should be a power of two.
                                      Defaults to %(default)s.""")
 
+    train_parser.add_argument("data", type=str,
+                              help="""Either a file containing paths to .mp3's, or a folder containing .mp3's,
+                                      or a single .mp3""")
     train_parser.add_argument("-l", "--learning-rate", default=0.0001, type=float, dest="learning_rate",
                               help="""Learning rate for training. Will be
                                       exponentially decayed over time.
@@ -45,11 +48,27 @@ def parse_args():
                               help="""Learning rate for training. Will be
                                       exponentially decayed over time.
                                       Defaults to %(default)s.""")
+    train_parser.add_argument("-lrs", "--lambda-reconstruct-sound", type=float,
+                              default=1.0, help="""Weight factor of sound reconstruction in the total loss.
+                                                   Defaults to %(default)s.""")
+    train_parser.add_argument("-lri", "--lambda-reconstruct-image", type=float,
+                              default=0.0, help="""Weight factor of input image reconstruction in the total loss.
+                                                   Defaults to %(default)s. The input image is currently random.""")
+    train_parser.add_argument("-lc", "--lambda-change", type=float,
+                              default=0.0, help="""Weight factor of difference to previous infered image
+                                                   in the total loss.
+                                                   Defaults to %(default)s.""")
+    train_parser.add_argument("-ln", "--lambda-noise", type=float,
+                              default=0.0, help="""Weight factor of penalizing noise in the total loss.
+                                                   Defaults to %(default)s.""")
+    train_parser.add_argument("-lco", "--lambda-colorfulness", type=float,
+                              default=0.0, help="""Weight factor colorfulness in the total loss.
+                                                   Defaults to %(default)s.
+                                                   (This loss works the least well).""")
+    train_parser.add_argument("-rc", "--with-random-crop", action="store_true",
+                              help="""Use random crop of the generated image to reconstruct image.
+                                   Defaults to %(default)s.""")
 
-
-    train_parser.add_argument("data", type=str,
-                              help="""Either a file containing paths to .mp3's, or a folder containing .mp3's,
-                                      or a single .mp3""")
     store_parser.add_argument("data", type=str,
                               help="""Either a file containing paths to .mp3's, or a folder containing .mp3's,
                                       or a single .mp3""")
@@ -57,6 +76,7 @@ def parse_args():
                               help="""Target directory for storing the resulting video.
                                       Warning: There may be many frames stored here intermediately,
                                       so make sure you have enough disc space.""")
+
     stream_parser.add_argument("-d", "--device-index", dest="device_index", type=int, default=None,
                                help="""Device index to be used as audio input.
                                        Default is the system's standard audio input.""")
@@ -84,7 +104,6 @@ if __name__ == "__main__":
 
     if mode == "info":
         info()
-        sys.exit()
     else:
         batch_size = arguments.batch_size
         img_size = (arguments.rows, arguments.cols)
@@ -94,7 +113,13 @@ if __name__ == "__main__":
         if mode.lower() == "train":
             learning_rate = arguments.learning_rate
             shuffle = arguments.allow_shuffle
-            synethesia.train(model_name=model_name, learning_rate=learning_rate, shuffle_input=shuffle)
+
+            synethesia.train(model_name=model_name, learning_rate=learning_rate, shuffle_input=shuffle,
+                             lambda_reconstruct_sound=arguments.lambda_reconstruct_sound,
+                             lambda_reconstruct_image=arguments.lambda_reconstruct_image,
+                             lambda_noise=arguments.lambda_noise, lambda_change=arguments.lambda_change,
+                             lambda_colorfulness=arguments.lambda_colorfulness,
+                             with_random_crop=arguments.with_random_crop)
         elif mode.lower() == "infer":
             song_files = arguments.data
             target_dir = arguments.target_dir
