@@ -6,7 +6,7 @@ from synethesia.framework.model_skeleton import Model
 
 class SynethesiaModel(Model):
 
-    def __init__(self, feature_dim, img_size=(256, 128), num_residual=3, **kwargs):
+    def __init__(self, feature_dim, img_size=(256, 128), num_residual=7, **kwargs):
 
         self.feature_dim = feature_dim
         self.img_size = img_size
@@ -188,7 +188,7 @@ class SynethesiaModel(Model):
                                                                        decay_steps=1000, decay_rate=0.95,
                                                                        staircase=False, name="change_decay")
                 change_importance = tf.maximum(decayed_change_importance, _loss_equilibrium)
-                change_loss = (decayed_change_importance *
+                change_loss = (change_importance *
                                self._add_consecutive_change_loss(generated_img=generated_img,
                                                                  last_generated_img=previous_img))
                 _total_loss += change_loss
