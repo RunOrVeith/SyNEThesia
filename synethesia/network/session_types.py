@@ -4,7 +4,7 @@ import abc
 import tensorflow as tf
 import numpy as np
 
-from .session_management import CustomSession, SessionHook
+from synethesia.framework.session_management import CustomSession, SessionHook
 
 
 def time_diff(start_time):
@@ -37,7 +37,7 @@ class TrainingSession(CustomSession):
         self.learning_rate = learning_rate
         self.generate_train_dict = trainable.generate_train_dict
         self.prev_img_handle = None
-        self.previous_shape = 32  # TODO get batch_size from somewhere
+        self.previous_shape = None
         super().__init__(model=model)
 
     def train(self, model_name, data_provider, save_every_n_steps=1000):
@@ -50,16 +50,16 @@ class TrainingSession(CustomSession):
         feed_dict = self.generate_train_dict(input_features=input_feature)
         feed_dict.update({self.model.learning_rate: self.learning_rate})
         if self.prev_img_handle is None:
-            previous_img = np.zeros((input_feature.shape[0], *self.model.img_size, 3))
+            previous_img = np.random.normal(loc=0.5, scale=0.3, size=(input_feature.shape[0], *self.model.img_size, 3))
             feed_dict.update({self.model.previous_img: previous_img})
             step, self.prev_img_handle = session_handler.training_step(feed_dict=feed_dict,
                                                                        additional_ops=[self.model.gen_handle])
         else:
             if input_feature.shape[0] != self.previous_shape:
-                previous_img = np.zeros((input_feature.shape[0], *self.model.img_size, 3))
+                previous_img = np.random.normal(loc=0.5, scale=0.3,
+                                                size=(input_feature.shape[0], *self.model.img_size, 3))
             else:
                 previous_img = self.prev_img_handle
-            #_, previous_img = tf.get_session_tensor(self.prev_img_handle.handle, tf.float32)
             feed_dict.update({self.model.previous_img: previous_img})
             step, self.prev_img_handle = session_handler.training_step(feed_dict=feed_dict,
                                                                        additional_ops=[self.model.gen_handle])
