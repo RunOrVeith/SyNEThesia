@@ -49,11 +49,15 @@ class TrainingSession(CustomSession):
     def _train_once(self, session_handler, input_feature):
         feed_dict = self.generate_train_dict(input_features=input_feature)
         feed_dict.update({self.model.learning_rate: self.learning_rate})
+
         if self.prev_img_handle is None or input_feature.shape[0] != self.previous_shape:
-            previous_img = np.random.normal(loc=0.5, scale=0.3, size=(input_feature.shape[0], *self.model.img_size, 3))
+            mean = 0.5
+            std = 0.3
+            previous_img = np.random.normal(loc=mean, scale=2*std,
+                                            size=(input_feature.shape[0], *self.model.img_size, 3))
         else:
             previous_img = self.prev_img_handle
-                
+
         feed_dict.update({self.model.previous_img: previous_img})
         step, self.prev_img_handle = session_handler.training_step(feed_dict=feed_dict,
                                                                    additional_ops=[self.model.gen_handle])
